@@ -1,0 +1,10 @@
+(const int * , int ** a, int *const*  c, const int ** d, const int *const * )
+Ki = S_ (That's not even a real type)
+PKi = S0_
+Pi = S1_
+PPi = S2_
+KS1_ = S3_
+PKS1_ = S4_
+PS0_ = S5_
+KS0_ = S6_
+PKS0_ = S7_ 
