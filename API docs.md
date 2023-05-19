@@ -20,8 +20,28 @@ To create a type you use `createTypeId` it takes 5 arguments.
 * BumpAllocator * alloc 
 
 ### createMethodIdentifierData
-
+Once you have a type you need a method identifier. 
+* const char * id - name of function
+* const char ** nests - array of namespaces and classes the function is defined in from outermost to innermost, Terminated by a NULL.
+* size_t arg_n - number of arguments the function takes.
+* const TypeIdentifier * args - types of arguments. 
+* BumpAllocator * alloc
 ### createGlobalIdentifierData
-
+Creates a global variable. The type of a global variable isn't mangled so it's not inputted. 
+* const char * id - name of the variable
+* const char *const * nests - namespace/class in which the variable is defined. For classes this only applies to Static variables. 
+* BumpAllocator * alloc
 ### createFunctionPtrTypeId
-
+C Function pointer type. 
+* const TypeIdentifier * return - singleton pointer for return type. 
+* const char ** nests - array of namespaces and classes the function is defined in from outermost to innermost, Terminated by a NULL.
+* size_t arg_n - number of arguments the function takes.
+* const TypeIdentifier * args - types of arguments. 
+* BumpAllocator * alloc
+### createSpecialMethodIdentifierData
+Creates a special method. That is a constructor, a destructor or an operator.
+* SPECIAL_METHOD tag - enum for special method. 
+* const char ** nests - array of namespaces and classes the function is defined in from outermost to innermost, Terminated by a NULL.
+* size_t arg_n - number of arguments the function takes.
+* const TypeIdentifier * args - types of arguments. 
+* BumpAllocator * alloc
