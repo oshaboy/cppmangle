@@ -18,4 +18,5 @@ This is only an MVP right now and is missing a lot of features and is probably q
 ### future ideas
 * some common C++ types in the form of opaque types as a header file. 
 * templates, templates require some knowledge of the contents of a C++ header file so they might not be possible. 
-* other name mangling schemes (does MSVC even work with dlsym?)
+* other name mangling schemes (Such as MSVC or Rust)
+* Demangle string into MethodIdentifierData
