@@ -23,21 +23,28 @@ typedef struct {
 	AuxilliaryTypeData auxdata;
 } TypeIdentifierDiff;
 
+/*
+Have you ever subtracted types? Me neither
+buf should be given enough data for the substitution strings. 
+pointer_qualifier_copy_buf should be given enough to store all the pointer_qualifiers
+*/
 static TypeIdentifierDiff subtract(
 	const TypeIdentifier * ti1,
 	const TypeIdentifier * ti2,
 	char * buf,
 	POINTER_QUALIFIER * pointer_qualifier_copy_buf
 ){
-	/*
-	PCi
-	Ci
-	*/
+	
 	const static TypeIdentifierDiff invalid = {
 		.isvalid=false
 	};
+	/*Of course Functions require a recursive call*/
 	if (ti1->member_ismethodtype){
 		{
+		/*
+		Functions are only a valid subtraction result if they are identical
+		So if they aren't identical return "invalid"
+		*/
 		const TypeIdentifier * return_type = ti1->method.member_return_type;
 		if (!ti2->member_ismethodtype) return invalid;
 		if (
@@ -50,8 +57,7 @@ static TypeIdentifierDiff subtract(
 				ti1->method.member_arg_count != ti2->method.member_arg_count ||
 				!subtract(ti1->method.member_return_type,
 					ti2->method.member_return_type,buf2,pqbuf2).iseq 
-				) 
-					return invalid;
+				) return invalid;
 		} else {
 			if (ti1->method.member_return_type==ti2->method.member_return_type)
 				return invalid;
@@ -67,21 +73,14 @@ static TypeIdentifierDiff subtract(
 			POINTER_QUALIFIER pqbuf2[ti1_arg->member_pointers_end-ti1_arg->member_pointers+1];
 			if (!subtract(ti1_arg, ti2_arg,buf2,pqbuf2).iseq) return invalid;
 		}
-		/*
-		return (TypeIdentifierDiff){
-			.iseq=true,
-			.isvalid=true,
-			.member_pointers=pointer_qualifier_copy_buf,
-			.member_pointers_end=pointer_qualifier_copy_buf,
-			.member_ref=VALUE,
-			.format_str="%s",
-			.member_complexity=REAL
-		};
-		*/
+		
 	} else{
+		/*Compare the identifiers*/
 		if (
+				/*We know ti1 is a method type so if ti2 isn't it's invalid*/
 				ti2->member_ismethodtype || 
-				ti1->methodnt.isidentifier != ti2->methodnt.isidentifier ||
+				/*prevent case of a class named "i" being compared to an int for example*/
+				ti1->methodnt.isidentifier != ti2->methodnt.isidentifier || 
 				strcmp(ti1->methodnt.name, ti2->methodnt.name)
 			) return invalid;
 	}
@@ -92,7 +91,7 @@ static TypeIdentifierDiff subtract(
 	const POINTER_QUALIFIER * pointer_ptr1 = ti1->member_pointers;
 	const POINTER_QUALIFIER * pointer_ptr2 = ti2->member_pointers;
 
-	//POINTER_QUALIFIER pointer_qualifier_copy[pointer_size];
+	/*compare the pointer qualifiers*/
 	bool is_ti2_a_pointer;
 	if ((is_ti2_a_pointer=ti2->member_pointers<ti2->member_pointers_end)){
 		for (;pointer_ptr2<ti2->member_pointers_end-1; pointer_ptr1++, pointer_ptr2++){
@@ -103,32 +102,40 @@ static TypeIdentifierDiff subtract(
 			) return invalid;
 			//*(pointer_qualifier_copy_end_ptr++)=(*pointer_ptr1)-(*pointer_ptr2);
 		}
+		/*The last qualifier can (Which is actually the first in the string) can mangle even if they aren't identical.
+		but only if the qualifiers are in a specific order
+		*/
 		if (
-			((*pointer_ptr1&CONSTANT) && !(*pointer_ptr2&CONSTANT)) ||		/*PKi Pi*/
-			(!(*pointer_ptr1&CONSTANT) && (*pointer_ptr2&CONSTANT)) || 		/*Pi (P)Ki*/
-			((*pointer_ptr1 & NO_P)   && !(*pointer_ptr2 & NO_P)) ||		/*Ki PKi*/
-			(!(*pointer_ptr1 & VOLATILE) && (*pointer_ptr2 & VOLATILE)) ||	/*Pi VPi*/
-			(!(*pointer_ptr1 & RESTRICT) && (*pointer_ptr2 & RESTRICT))		/*Pi rPi*/
+			((*pointer_ptr1&CONSTANT) && !(*pointer_ptr2&CONSTANT)) ||		/*PKi-Pi=invalid*/
+			(!(*pointer_ptr1&CONSTANT) && (*pointer_ptr2&CONSTANT)) || 		/*Pi-(P)Ki=invalid*/
+			((*pointer_ptr1 & NO_P)   && !(*pointer_ptr2 & NO_P)) ||		/*Ki-PKi=invalid*/
+			(!(*pointer_ptr1 & VOLATILE) && (*pointer_ptr2 & VOLATILE)) ||	/*Pi-VPi=invalid*/
+			(!(*pointer_ptr1 & RESTRICT) && (*pointer_ptr2 & RESTRICT))		/*Pi-rPi=invalid*/
 
 		) return invalid;
 	}
 	if (ti1->member_pointers_end>pointer_ptr1){
+		/*Now subtract the last qualifier*/
 		const size_t pointer_count=ti1->member_pointers_end-pointer_ptr1;
 		POINTER_QUALIFIER * pointer_qualifier_copy_end_ptr=pointer_qualifier_copy_buf+pointer_count;
 		if (is_ti2_a_pointer) {
+			/*They have to be mutable so they need to be copied*/
 			memcpy(pointer_qualifier_copy_buf+1,pointer_ptr1+1,pointer_count-1);
 			*pointer_qualifier_copy_buf=(*pointer_ptr1)-(*pointer_ptr2);
-
+			/*NO_P is 0x80 which doesn't subtract properly  */
 			if ((*pointer_ptr1 & NO_P) == (*pointer_ptr2 & NO_P))
 				*pointer_qualifier_copy_buf|=NO_P;
 			else if (!(*pointer_ptr1 & NO_P) && (*pointer_ptr2 & NO_P))
 				*pointer_qualifier_copy_buf-=NO_P; // reverse the overflow that just happened. 
 		} else
 			memcpy(pointer_qualifier_copy_buf,pointer_ptr1,pointer_count);
-		
+		/*
+		NO_P on it's own mangles to the empty string so it isn't needed.
+		*/
 		if(*pointer_qualifier_copy_buf == NO_P){
 			pointer_qualifier_copy_buf++;
 		}
+
 		result=(TypeIdentifierDiff) {
 			.isvalid=true,
 			.member_pointers=pointer_qualifier_copy_buf,
@@ -149,11 +156,15 @@ static TypeIdentifierDiff subtract(
 			.member_complexity=ti1->member_complexity-ti2->member_complexity
 		};
 	}
-	
+	/*the auxdata length is used in mangleAuxData so it has to be initialized beforehand*/
 	set_auxdata_length(&result.auxdata);
 	{
 	char buf2[result.member_auxdata_len+1];
 	const char * fmt = mangleAuxData(&result.auxdata, buf2);
+	/*
+	A bit of a hack but it works
+	iseq is super useful for checking for duplicates
+	*/
 	result.iseq=(*fmt == '\0');
 	
 	sprintf(result.format_str, "%s%%s", fmt);
@@ -164,11 +175,11 @@ static TypeIdentifierDiff subtract(
 
 }
 
+
 static void findSubstitutionArgRec(
 	const TypeIdentifier * from,
 	const size_t * argnum,
 	const ArgSubstitutionTree * arg_subs,
-	//const SubstitutionDataStructure * subs,
 	const Substitution ** found,
 	TypeIdentifierDiff * found_diff,
 	size_t arg_sub_count,
@@ -274,15 +285,18 @@ const char * mangleTypeWithSubstitution(
 ){
 
 	const Substitution * found=NULL;
-	char buf2[ti->type_length+5];
-	const char * format_str = findSubstitution(
-		subs,
-		ti,
-		argnum_buf,
-		&found,
-		nest_count,
-		buf2
-	);
+	const char * format_str;
+	if (ti->member_can_have_substitution){
+		char buf2[ti->type_length+5];
+		format_str = findSubstitution(
+			subs,
+			ti,
+			argnum_buf,
+			&found,
+			nest_count,
+			buf2
+		);
+	}
 	if (found){
 		sprintf(buf, format_str, found->to);
 	} else if(ti->member_ismethodtype){
@@ -296,18 +310,21 @@ const char * mangleTypeWithSubstitution(
 		*(bufptr++)='F';
 		if (ti->method.member_return_type){
 			**argnum_ptr=RETURN;
-			
-			const char * s=mangleTypeWithSubstitution(
-				subs,
-				ti->method.member_return_type,
-				bufptr,
-				argnum_ptr,
-				nest_count,
-				argnum_buf
-			);
+			if (ti->method.member_return_type->member_can_have_substitution){
+				const char * s=mangleTypeWithSubstitution(
+					subs,
+					ti->method.member_return_type,
+					bufptr,
+					argnum_ptr,
+					nest_count,
+					argnum_buf
+				);
 
-			bufptr+=strlen(s);
-			//bufptr+=ti->method.member_return_type->type_length;
+				bufptr+=strlen(s);
+			} else {
+				mangleType(ti->method.member_return_type,bufptr);
+				bufptr+=ti->method.member_return_type->type_length;
+			}
 		} else 
 			*(bufptr++)='v';
 		if (ti->method.member_arg_count){
@@ -315,22 +332,26 @@ const char * mangleTypeWithSubstitution(
 				arg_ti<ti->method.member_argtypes+ti->method.member_arg_count;
 				arg_ti++
 			){
-
-				**argnum_ptr=arg_ti-ti->method.member_argtypes;
-				const char * s=mangleTypeWithSubstitution(
-					subs,
-					arg_ti,
-					bufptr,
-					argnum_ptr,
-					nest_count,
-					argnum_buf
-				);
-				bufptr+=strlen(s);
+				if (arg_ti->member_can_have_substitution){
+					**argnum_ptr=arg_ti-ti->method.member_argtypes;
+					const char * s=mangleTypeWithSubstitution(
+						subs,
+						arg_ti,
+						bufptr,
+						argnum_ptr,
+						nest_count,
+						argnum_buf
+					);
+					bufptr+=strlen(s);
+				} else {
+					mangleType(arg_ti,bufptr);
+					bufptr+=arg_ti->type_length;
+				}
 			}
 		} else 
 			*(bufptr++)='v';
 		
-		strcpy(bufptr, "E");
+		strcpy(bufptr, "E"); //This needs to be a strcpy so the null terminator will be copied. 
 	} else {
 		mangleType(ti, buf);
 	}
@@ -401,13 +422,15 @@ static size_t getSubArrLen(const MethodData * d){
 	return result;
 }
 
-static const char * base36(size_t n, char * buf){
+static const char * base36(size_t n, char * buf, size_t * len){
+	*len=0;
 	if (n==0){
 		return "0";
 	} else {
 		char * ptr = buf+13;
 		*(ptr--)='\0';
 		while(n>0){
+			(*len)++;
 			unsigned int dig=n%36;
 			if (dig>10){
 				*(ptr--)=dig-10+'A';
@@ -419,14 +442,17 @@ static const char * base36(size_t n, char * buf){
 		return ptr+1;
 	}
 }
-static char * generateSubstitution(size_t n, char * buf){
+static char * generateSubstitution(size_t n, char * buf, size_t * len){
+	*len=0;
 	if (n==0){
 		strcpy(buf, "S_");
+		
 	} else {
 		--n;
 		char buf2[14];
-		sprintf(buf,"S%s_", base36(n,buf2));
+		sprintf(buf,"S%s_", base36(n,buf2, len));
 	}
+	len+=2;
 	return buf;
 }
 static inline void updatePtr(
@@ -452,8 +478,8 @@ static inline void updatePtr(
 			(*substitution_tree_ptr)->substitution.from.member_pointers_end=destination+pointer_count;
 
 		}
-		(*substitution_tree_ptr)->substitution.to=generateSubstitution(*subnum_ptr, new_to); 
-		(*substitution_tree_ptr)->substitution.to_len=strlen(new_to); 
+		(*substitution_tree_ptr)->substitution.to=generateSubstitution(*subnum_ptr, new_to,
+		&(*substitution_tree_ptr)->substitution.to_len); 
 		(*substitution_tree_ptr)->argnum=argnum;
 		(*subnum_ptr)++; 
 		(*substitution_tree_ptr)++;
@@ -462,7 +488,10 @@ static inline void updatePtr(
 		(*argument_sub_num_ptr)++;
 	}
 }
-
+/*
+	This is the worst function in the program, be warned
+	It initializes the whole recursive mess that is substitutions. 
+*/
 static void setArgSubstitutionsRec(
 	SubstitutionDataStructure * substitution_ds,
 	const TypeIdentifier * ti,
@@ -474,28 +503,38 @@ static void setArgSubstitutionsRec(
 	size_t * max_nests,
 	size_t cur_nests
 ){
-
+	/*max_nests keeps track of the maximum nests it is possible to traverse in the tree*/
 	if (cur_nests>*max_nests) *max_nests=cur_nests;
+	/*Copy the Type with no Auxiliary Data*/
 	TypeIdentifier ticpy = {
-		.methodnt.name=ti->methodnt.name,
-		.methodnt.name_len=ti->methodnt.name_len,
-		.methodnt.name_len_len=ti->methodnt.name_len_len,
-		.methodnt.isidentifier=ti->methodnt.isidentifier,
+
 		.member_pointers_end=ti->member_pointers,
 		.member_pointers=ti->member_pointers,
-		.member_ismethodtype=false
+		.member_ismethodtype=false,
+		.member_can_have_substitution=true
 	};
+	/*Named booleans for the UpdatePtr Function*/
 	static const bool DO_NOT_COPY_PTR_QUALIFIERS=false;
 	static const bool COPY_PTR_QUALIFIERS=true;
 	(*substitution_tree_ptr)->subs_of_func_ptr=NULL;
 	(*substitution_tree_ptr)->argument_sub_num_for_func_ptr=0;
 	if (ti->member_ismethodtype){
+		/*
+		This is the recursive case, If the ti is a method you need to set the substitutions of the return type,
+		and all the arguments. 
+		*/
 		const size_t arrlen = getSubArrLen(&ti->method.method_data);
 		if (arrlen){
 			(*substitution_tree_ptr)->subs_of_func_ptr=bump_alloc(alloc, arrlen*sizeof (ArgSubstitutionTree));
-			//(*substitution_tree_ptr)->argument_sub_num=0;
 			ArgSubstitutionTree * argtree2=(*substitution_tree_ptr)->subs_of_func_ptr;
-			(*argument_sub_num_ptr)++; //temporarily increment it so the program knows there's a partial function argument here
+			/*
+				temporarily increment the number of substitutions,
+				so the program knows there's a partial function argument here
+			*/
+			(*argument_sub_num_ptr)++; 
+			/*
+			Recursive call on return type
+			*/
 			if (ti->method.member_return_type != NULL)
 				setArgSubstitutionsRec(
 					substitution_ds,
@@ -508,6 +547,9 @@ static void setArgSubstitutionsRec(
 					max_nests,
 					cur_nests+1
 				);
+			/*
+			Recursive call on arguments
+			*/
 			for (const TypeIdentifier * argptr = ti->method.member_argtypes;
 				argptr < ti->method.member_argtypes + ti->method.member_arg_count;
 				argptr++
@@ -526,10 +568,17 @@ static void setArgSubstitutionsRec(
 				);
 
 			}
+
 			(*argument_sub_num_ptr)--; //ok done with the partial function
 		}
+		/*
+		Now add a subsitution for the method itself. 
+		*/
 		ticpy.member_ismethodtype=true;
 		ticpy.method.member_return_type=ti->method.member_return_type;
+		ticpy.method.member_argtypes=ti->method.member_argtypes;
+		ticpy.method.member_arg_count=ti->method.member_arg_count;
+
 		updatePtr(
 			substitution_ds,
 			argnum,
@@ -540,9 +589,14 @@ static void setArgSubstitutionsRec(
 			argument_sub_num_ptr,
 			DO_NOT_COPY_PTR_QUALIFIERS
 		);
-		//ticpy.member_ismethodtype=false;
 	}
 	else if (ti->methodnt.isidentifier){
+		/* Each named identifier gets a substitution
+			primitive types don't
+		*/
+		ticpy.methodnt.name=ti->methodnt.name;
+		ticpy.methodnt.name_len=ti->methodnt.name_len;
+		ticpy.methodnt.name_len_len=ti->methodnt.name_len_len;
 		ticpy.methodnt.isidentifier=true;
 		updatePtr(
 			substitution_ds,
@@ -554,7 +608,13 @@ static void setArgSubstitutionsRec(
 			argument_sub_num_ptr,
 			DO_NOT_COPY_PTR_QUALIFIERS
 		);
+	} else {
+		ticpy.methodnt.name=ti->methodnt.name;
+		ticpy.methodnt.name_len=ti->methodnt.name_len;
+		ticpy.methodnt.name_len_len=ti->methodnt.name_len_len;
+		ticpy.methodnt.isidentifier=false;
 	}
+	/*Set sub if the argument is complex or imaginary*/
 	if (ti->member_complexity){
 		ticpy.member_complexity = ti->member_complexity;
 		updatePtr(
@@ -569,6 +629,7 @@ static void setArgSubstitutionsRec(
 		);
 	}
 	{
+	/*Copy the pointers over to a mutable array*/
 	const size_t pointer_count=ti->member_pointers_end-ti->member_pointers;
 	POINTER_QUALIFIER pointers_copy[pointer_count+1];
 	POINTER_QUALIFIER * pointers_copy_end = pointers_copy+pointer_count;
@@ -581,7 +642,7 @@ static void setArgSubstitutionsRec(
 	){
 		POINTER_QUALIFIER qualifier_save = *pointer_ptr;
 		ticpy.member_pointers_end=pointer_ptr+1;
-		
+		/*The substitutions for pointer qualifiers must go in with a specific order*/
 		if (qualifier_save & CONSTANT){
 			*pointer_ptr=NO_P | CONSTANT;
 			updatePtr(
@@ -609,6 +670,7 @@ static void setArgSubstitutionsRec(
 				);
 		}
 		if ((qualifier_save & RESTRICT) || !(qualifier_save & VOLATILE)){
+			/*Volatile doesn't get a substitution for some reason*/
 			*pointer_ptr=qualifier_save;
 			updatePtr(
 					substitution_ds,
@@ -622,11 +684,17 @@ static void setArgSubstitutionsRec(
 				);
 		}
 	}
+	/*
+	the pointer array is about to go out of scope so 
+	set the member_pointers back. 
+	*/
 	ticpy.member_pointers=ti->member_pointers;
 	ticpy.member_pointers_end=ti->member_pointers_end;
 
 	}
+	/*Finally, reference*/
 	if (ti->member_ref){
+
 		ticpy.member_ref=ti->member_ref;
 		updatePtr(
 			substitution_ds,
@@ -660,7 +728,7 @@ void setSubstitutions(MethodIdentifierData * d, BumpAllocator * alloc){
 			};
 			char * new_to=bump_alloc(alloc, MAX_SUBSTITUTION_SIZE);
 			substitution_ptr->from=ticpy;
-			substitution_ptr->to=generateSubstitution(subnum, new_to); 
+			substitution_ptr->to=generateSubstitution(subnum, new_to,&substitution_ptr->to_len); 
 			subnum++;
 		}
 	} else {

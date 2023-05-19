@@ -201,10 +201,8 @@ char * mangleAuxData(const AuxilliaryTypeData * aux, char * buf){
 
 /*Mangles a type without substitutions*/
 const char * mangleType(const TypeIdentifier * ti, char * buf){
-
 	char buf2[ti->member_auxdata_len+1];
 	const char * mangled_aux_data=mangleAuxData(&ti->auxdata, buf2);
-	
 	if (ti->member_ismethodtype){
 		char * bufptr=buf;
 		strcpy(bufptr, mangled_aux_data); bufptr+=ti->member_auxdata_len;
@@ -231,7 +229,7 @@ const char * mangleType(const TypeIdentifier * ti, char * buf){
 }
 
 const size_t RETURN = (size_t)-1;
-
+/*Mangle Identifier*/
 const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
 	if (d->ismethod){
 		const size_t mangled_id_length = calculate_mangled_length(d);
@@ -296,9 +294,7 @@ const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
 		return d->member_id.id;
 	}
 
-
 }
-
 static void setNests(
 	size_t * nest_count_ptr,
 	const LenId ** lenid_nests,
