@@ -4,7 +4,7 @@ FLASG := -Wall  -O3 -fPIC
 
 all: test libmangle.so mangled_stuff.s
 debug: FLASG := -Wall -Wno-unused-variable -g -fPIC
-debug: mangle_test all 
+debug: all 
 test: mangle_cpp.so run_tests
 mangle.o: mangle.c *.h 
 	$(CC) $(FLASG) -S mangle.c
@@ -31,11 +31,6 @@ mangled_stuff.s: mangle.cpp
 	$(CPP) -o mangled_stuff.s -O -S mangle.cpp
 libmangle.so: mangle.o allocator.o substitutions.o cpptypes.o
 	$(CPP) $(FLASG) -shared -o libmangle.so mangle.o allocator.o substitutions.o cpptypes.o
-mangle_test.o: mangle_test.c
-	$(CC) $(FLASG) -S mangle_test.c
-	$(CC) $(FLASG) -c mangle_test.s
-mangle_test: mangle_test.o libmangle.so
-	$(CC) $(FLASG) -o mangle_test mangle_test.o  ./libmangle.so
 clean: 
 	rm -f *.o *.so *.s 
 	rm -f mangling_unit_tests mangle_test
