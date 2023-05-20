@@ -778,9 +778,51 @@ START_TEST(substitution_in_return_type) {
 	*thing = 0xcccccccc;
 	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
+START_TEST(demangle_test) {
+	BumpAllocator allocator={0};
+	IdentifierData d;
+	const char * mangled_name="_Z3addiRPc2idFicE";
+	d=demangle(mangled_name,&allocator);
+	
+	ck_assert_str_eq(d.member_id.id, "add");
+	ck_assert_str_eq(d.method.member_argtypes[0].methodnt.name, "i");
+	ck_assert_ptr_eq(d.method.member_argtypes[0].member_pointers,
+		d.method.member_argtypes[0].member_pointers_end);
+	ck_assert_str_eq(d.method.member_argtypes[1].methodnt.name, "c");
+	ck_assert_int_eq(d.method.member_argtypes[1].member_ref, LVALUEREF);
+	ck_assert_ptr_eq(d.method.member_argtypes[1].member_pointers+1,
+		d.method.member_argtypes[1].member_pointers_end);
+	
 
+	ck_assert_str_eq(d.method.member_argtypes[2].methodnt.name, "id");
+	ck_assert_str_eq(d.method.member_argtypes[3].method.member_argtypes->methodnt.name, "c");
+	ck_assert_str_eq(d.method.member_argtypes[3].method.member_return_type->methodnt.name, "i");
+	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+} END_TEST
+START_TEST(demangle_nest_test) {
+	BumpAllocator allocator={0};
+	IdentifierData d;
+	const char * mangled_name="_ZN7MyClass4funcEN11MyNamespace6MyTypeE";
+	d=demangle(mangled_name,&allocator);
+	ck_assert_str_eq(d.member_nests->id,"MyClass");
+	ck_assert_int_eq(d.member_nest_count,1);
+	ck_assert_str_eq(d.member_id.id,"func");
+	ck_assert_str_eq(d.method.member_argtypes->methodnt.name,"MyType");
+	ck_assert_str_eq(d.method.member_argtypes->member_aux_nests->id,"MyNamespace");
+
+	ck_assert_int_eq(d.method.member_argtypes->member_aux_nest_count,1);
+	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+} END_TEST
+
+START_TEST(demangle_substitution_test) {
+	BumpAllocator allocator={0};
+	IdentifierData d;
+	const char * mangled_name="_Z4funcPiS_";
+	d=demangle(mangled_name,&allocator);
+	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+} END_TEST
 int main(void){
-	const TTest * all_tests[]={
+	const TTest * all_mangle_tests[]={
 		dont_mangle_unnested_global,
 		nested_global,
 		void_function,
@@ -807,14 +849,27 @@ int main(void){
 		substitution_in_return_type,
 		NULL
 	};
-	Suite *s=suite_create("Mangling");
-	TCase * idfc=tcase_create("IDFC");
-    for (const TTest ** test_ptr=all_tests; *test_ptr; test_ptr++){
+	Suite *s;
+	TCase * idfc;
+	s=suite_create("MySuite");
+	idfc=tcase_create("Mangling");
+    for (const TTest ** test_ptr=all_mangle_tests; *test_ptr; test_ptr++){
+		tcase_add_test(idfc, *test_ptr);
+	}
+	suite_add_tcase(s,idfc);
+
+	idfc=tcase_create("Demangling");
+	const TTest * all_demangle_tests[]={
+		demangle_test,
+		demangle_nest_test,
+		demangle_substitution_test,
+		NULL
+	};
+	for (const TTest ** test_ptr=all_demangle_tests; *test_ptr; test_ptr++){
 		tcase_add_test(idfc, *test_ptr);
 	}
 	suite_add_tcase(s,idfc);
 	//int number_failed;
-
     SRunner *sr = srunner_create(s);
 	srunner_run_all(sr, CK_NORMAL);
     return 0;

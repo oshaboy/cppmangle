@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 #include "cppmangle.h"
 
 const char * mangleTypeWithSubstitution(
@@ -16,6 +15,7 @@ const char * mangleTypeWithSubstitution(
 );
 void setSubstitutions(MethodIdentifierData * d, BumpAllocator * alloc);
 size_t getSubArrLen(const MethodData * d);
+
 #define SPECIAL_METHOD(STR) \
 	(LenId){ \
 	.full_id = NULL, \
@@ -82,7 +82,7 @@ const LenId special_method_identifiers[] ={
 	[ARRAY_ACCESS_OPERATOR]=SPECIAL_METHOD("ix")
 };
 /*Converts a String to a LenId data structure*/
-static const LenId toLenId(const char * const id, BumpAllocator * alloc){
+const LenId toLenId(const char * const id, BumpAllocator * alloc){
 	LenId result = {.id_len=strlen(id)};
 	char len_str_buf[20];
 	sprintf(len_str_buf, "%zu", result.id_len);
@@ -106,7 +106,7 @@ void set_auxdata_length(AuxilliaryTypeData * aux){
 }
 
 /*Returns the length of ti WITHOUT SUBSTITUTIONS*/
-static size_t calculate_type_length(const TypeIdentifier * ti){
+size_t calculate_type_length(const TypeIdentifier * ti){
 	if (ti->member_ismethodtype){
 		size_t result = 2+ti->member_auxdata_len; //Functions are wrapped in F and E
 		if (ti->method.member_return_type){
@@ -203,9 +203,15 @@ char * mangleAuxData(const AuxilliaryTypeData * aux, char * buf){
 const char * mangleType(const TypeIdentifier * ti, char * buf){
 	char buf2[ti->member_auxdata_len+1];
 	const char * mangled_aux_data=mangleAuxData(&ti->auxdata, buf2);
+	char * bufptr=buf;
+	strcpy(bufptr, mangled_aux_data); bufptr+=ti->member_auxdata_len;
+	if(ti->member_aux_nests>0){
+		*(bufptr++)='N';
+		for (const LenId * ptr=ti->member_aux_nests; ptr<ti->member_aux_nests+ti->member_aux_nest_count; ptr++){
+			strcpy(bufptr,ptr->full_id); bufptr+=ptr->full_id_len;
+		}
+	}
 	if (ti->member_ismethodtype){
-		char * bufptr=buf;
-		strcpy(bufptr, mangled_aux_data); bufptr+=ti->member_auxdata_len;
 		*(bufptr++)='F';
 		if (ti->method.member_return_type){
 			mangleType(ti->method.member_return_type, bufptr); bufptr+=ti->method.member_return_type->type_length;
@@ -219,11 +225,14 @@ const char * mangleType(const TypeIdentifier * ti, char * buf){
 			*(bufptr++)='v';
 		
 		strcpy(bufptr, "E");
-	} else if (ti->methodnt.isidentifier)
-		sprintf(buf, "%s%zu%s", mangled_aux_data, ti->methodnt.name_len, ti->methodnt.name);
-	else 
-		sprintf(buf, "%s%s", mangled_aux_data, ti->methodnt.name);
-	
+	} else if (ti->methodnt.isidentifier){
+		sprintf(bufptr,"%zu", ti->methodnt.name_len); bufptr+=ti->methodnt.name_len_len;
+		strcpy(bufptr, ti->methodnt.name); bufptr+=ti->methodnt.name_len;
+	} else 
+		strcpy(bufptr, ti->methodnt.name);
+	if(ti->member_aux_nests>0){
+		strcpy(bufptr++,"E");
+	}
 	return buf;
 	
 }
@@ -231,9 +240,9 @@ const char * mangleType(const TypeIdentifier * ti, char * buf){
 const size_t RETURN = (size_t)-1;
 /*Mangle Identifier*/
 const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
+	const size_t mangled_id_length = calculate_mangled_length(d);
+	char *const result = bump_alloc(alloc,mangled_id_length+1);
 	if (d->ismethod){
-		const size_t mangled_id_length = calculate_mangled_length(d);
-		char *const result = bump_alloc(alloc,mangled_id_length+1);
 		char *result_ptr = result;
 		strcpy (result_ptr, "_Z"); result_ptr+=2;
 		if (d->member_nest_count>0){
@@ -279,8 +288,7 @@ const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
 		}
 		return result;
 	} else if (d->member_nest_count>0) {
-		const size_t mangled_id_length = calculate_mangled_length(d)+1;
-		char *const result = bump_alloc(alloc,mangled_id_length);
+
 		char *result_ptr = result;
 		strcpy(result_ptr, "_ZN"); result_ptr+=3;
 		for (const LenId * ptr=d->member_nests; ptr<d->member_nests+d->member_nest_count; ptr++){
@@ -326,9 +334,9 @@ const TypeIdentifier createTypeId(
 	const unsigned long flags,
 	BumpAllocator * alloc
 ){
-	char buf[20];
+	//char buf[20];
 	size_t name_len = strlen(base);
-	sprintf(buf, "%zu", name_len);
+	//sprintf(buf, "%zu", name_len);
 	const POINTER_QUALIFIER * end;
 	for (end=ptrs; *end!=END; end++);
 	const size_t ptr_count=end-ptrs;
@@ -339,7 +347,7 @@ const TypeIdentifier createTypeId(
 		.methodnt.name=base,
 		.member_ref=flags&0b11,
 		.methodnt.name_len=name_len,
-		.methodnt.name_len_len=strlen(buf),
+		.methodnt.name_len_len=digCount(name_len),
 		.methodnt.isidentifier=flags&IDENTIFIER_BITMASK?true:false,
 		.member_complexity=(flags&0b11000)>>3,
 		.member_pointers=new_ptr_qualifiers,
@@ -457,3 +465,5 @@ const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag,
 	}
 	return result;
 }
+
+

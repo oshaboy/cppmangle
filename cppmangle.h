@@ -235,7 +235,7 @@ const char * mangle(const IdentifierData * d, BumpAllocator * alloc);
 const IdentifierData createGlobalIdentifierData(const char * id, const char *const* nests, BumpAllocator * alloc);
 /*creates IdentifierData structure for methodData*/
 const MethodIdentifierData createMethodIdentifierData(
-	const char * id, const char ** nests, const size_t argtype_n,
+	const char * id, const char ** nests, size_t argtype_n,
 	const TypeIdentifier * args, BumpAllocator * alloc);
 /*Mangles a Type without substitutions*/
 const char * mangleType(const TypeIdentifier * ti, char * buf);
@@ -248,7 +248,7 @@ const TypeIdentifier createFunctionPtrTypeId(
 	const POINTER_QUALIFIER * ptrs, unsigned long flags, BumpAllocator * alloc);
 /*Creates a special method (operator/constructor/destructor)*/
 const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag, const char *const* nests, const size_t argtype_n, const TypeIdentifier * args,BumpAllocator * alloc);
-
+const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * alloc);
 /*Bitmasks for flags*/
 #define LVALUE_REF_BITMASK 1
 #define RVALUE_REF_BITMASK 2
@@ -256,6 +256,15 @@ const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag,
 #define COMPLEX_BITMASK 8
 #define IMAGINARY_BITMASK 16
 
+static inline size_t digCount(size_t n){
+	size_t result=0;
+	if (n==0) return 1;
+	while(n!=0){
+		result++;
+		n/=10;
+	}
+	return result;
+}
 
 #include "cpptypes.h"
 

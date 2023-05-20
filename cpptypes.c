@@ -2,8 +2,8 @@
 #include "cpptypes.h"
 #include <stddef.h>
 
-static const POINTER_QUALIFIER not_ptr[]={END};
-static const POINTER_QUALIFIER ptr[]={0,END};
+static const POINTER_QUALIFIER qualifierless_pointers[4]={0,0,0,END};
+#define qualifierless_pointers_end (qualifierless_pointers+3)
 #define SIZEOF(STR) (sizeof(STR)-1)/sizeof((STR)[0])
 #define TYPE_IDENTIFIER(TYPE, STR) \
 const char * TYPE ## _string = STR; \
@@ -12,8 +12,8 @@ const TypeIdentifier TYPE ## _identifier = { \
 	.methodnt.name_len=SIZEOF(STR), \
 	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
 	.methodnt.isidentifier=0, \
-	.member_pointers=not_ptr, \
-	.member_pointers_end=not_ptr+0, \
+	.member_pointers=qualifierless_pointers_end, \
+	.member_pointers_end=qualifierless_pointers_end, \
 	.member_auxdata_len=0, \
 	.member_ref=VALUE, \
 	.type_length=SIZEOF(STR), \
@@ -24,8 +24,8 @@ const TypeIdentifier TYPE ## _ptr_identifier = { \
 	.methodnt.name_len=SIZEOF(STR), \
 	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
 	.methodnt.isidentifier=0, \
-	.member_pointers=ptr, \
-	.member_pointers_end=ptr+1, \
+	.member_pointers=qualifierless_pointers_end-1, \
+	.member_pointers_end=qualifierless_pointers_end, \
 	.member_auxdata_len=1, \
 	.member_ref=VALUE, \
 	.type_length=SIZEOF(STR)+1, \
@@ -36,8 +36,8 @@ const TypeIdentifier TYPE ## _lvalue_ref_identifier = { \
 	.methodnt.name_len=SIZEOF(STR), \
 	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
 	.methodnt.isidentifier=0, \
-	.member_pointers=not_ptr, \
-	.member_pointers_end=not_ptr+0, \
+	.member_pointers=qualifierless_pointers_end, \
+	.member_pointers_end=qualifierless_pointers_end, \
 	.member_auxdata_len=0, \
 	.member_ref=LVALUEREF, \
 	.type_length=SIZEOF(STR)+1, \
@@ -66,7 +66,42 @@ TYPE_IDENTIFIER(bfloat16, "DF16b")
 TYPE_IDENTIFIER(decimal32, "Df")
 TYPE_IDENTIFIER(decimal64, "Dd")
 TYPE_IDENTIFIER(decimal128, "De")
-TYPE_IDENTIFIER(void_ptr, "Pv")
+const TypeIdentifier void_ptr_identifier = { 
+	.methodnt.name="v", 
+	.methodnt.name_len=1, 
+	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
+	.methodnt.isidentifier=0, 
+	.member_pointers=qualifierless_pointers_end-1, 
+	.member_pointers_end=qualifierless_pointers_end, 
+	.member_auxdata_len=1, 
+	.member_ref=VALUE, 
+	.type_length=2, 
+	.member_can_have_substitution=0 
+};
+const TypeIdentifier void_ptr_ptr_identifier = { 
+	.methodnt.name="v", 
+	.methodnt.name_len=1, 
+	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
+	.methodnt.isidentifier=0, 
+	.member_pointers=qualifierless_pointers_end-2, 
+	.member_pointers_end=qualifierless_pointers_end, 
+	.member_auxdata_len=2, 
+	.member_ref=VALUE, 
+	.type_length=3, 
+	.member_can_have_substitution=1 
+};
+const TypeIdentifier void_ptr_lvalue_ref_identifier = { 
+	.methodnt.name="v", 
+	.methodnt.name_len=1, 
+	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
+	.methodnt.isidentifier=0, 
+	.member_pointers=qualifierless_pointers_end-1, 
+	.member_pointers_end=qualifierless_pointers_end, 
+	.member_auxdata_len=0, 
+	.member_ref=LVALUEREF, 
+	.type_length=3, 
+	.member_can_have_substitution=1 
+};
 TYPE_IDENTIFIER(std_nullptr_t, "Dn")
 TYPE_IDENTIFIER(wchar_t, "w")
 TYPE_IDENTIFIER(char8_t, "Du")
@@ -79,8 +114,8 @@ const TypeIdentifier ellipsis_identifier = {
 	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ 
 	.methodnt.isidentifier=0, 
 	.member_ref=VALUE, 
-	.member_pointers=not_ptr, 
-	.member_pointers_end=not_ptr+0, 
+	.member_pointers=qualifierless_pointers_end, 
+	.member_pointers_end=qualifierless_pointers_end, 
 	.member_auxdata_len=0, 
 	.type_length=1,
 	.member_can_have_substitution=0 
