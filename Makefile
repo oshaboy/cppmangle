@@ -3,7 +3,7 @@ CPP:=clang++
 FLASG := -Wall  -O3 -fPIC
 OBJECTS := mangle.o allocator.o substitutions.o cpptypes.o demangle.o
 
-all: test libmangle.so mangled_stuff.s
+all: test libmangle.so 
 debug: FLASG := -Wall -Wno-unused-variable -g -fPIC
 
 debug: all 

@@ -97,7 +97,8 @@ typedef enum {
 	ARROW_STAR_OPERATOR,
 	ARROW_OPERATOR,
 	CALL_OPERATOR,
-	ARRAY_ACCESS_OPERATOR
+	ARRAY_ACCESS_OPERATOR,
+	LAST_SPECIAL=ARRAY_ACCESS_OPERATOR
 } SPECIAL_METHOD;
 /*defined in mangle.c, LenId structs for all the special methods*/
 const extern LenId special_method_identifiers[];

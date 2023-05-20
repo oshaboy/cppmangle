@@ -28,8 +28,20 @@ static LenId demangle_identifier(const char ** mangled_name, BumpAllocator * all
 		*mangled_name+=result.full_id_len;
 		return result;
 	} else {
-		//TODO
-		(*mangled_name)++;
+		for (size_t i=0; i<LAST_SPECIAL; i++){
+			const LenId * id=special_method_identifiers+i;
+
+			for(size_t i=0;id->id[i];i++){
+				if (id->id[i] != (*mangled_name)[i])
+					continue;
+				else {
+					(*mangled_name)+=id->id_len;
+					return *id;
+				}
+			}
+		}
+		return (LenId){0};
+
 	}
 }
 inline static void move_to_next_identifier(const char ** str){
@@ -238,7 +250,6 @@ TypeIdentifier demangle_type(
 	} else {
 
 		result.methodnt.isidentifier=false;
-		POINTER_QUALIFIER current=0;
 		if (isdigit(**mangled_name_ptr)){
 			size_t chars_in_identifier;
 			sscanf(*mangled_name_ptr, "%zu", &chars_in_identifier);
