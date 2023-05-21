@@ -9,7 +9,7 @@ int main(void){
 	const IdentifierData cout_id = createGlobalIdentifierData(
 			"cout",
 			(const char * []){
-				std_namespace_string,
+				"std",
 				NULL
 			},
 			&allocator
@@ -18,7 +18,7 @@ int main(void){
 	MethodIdentifierData cout_func_id=createSpecialMethodIdentifierData(
 			LEFT_SHIFT_OPERATOR, 
 			(const char * []){
-				std_namespace_string,
+				"std",
 				NULL
 			},
 			2,(const TypeIdentifier [2]){
@@ -32,8 +32,8 @@ int main(void){
 				)
 			},
 			&allocator);
-
-	void (*cout_func)(struct ostream REF, const char *)=dlsym(cpplib, mangle(&cout_func_id, &allocator));
+	const char * mangle_id=mangle(&cout_func_id, &allocator);
+	void (*cout_func)(struct ostream REF, const char *)=dlsym(cpplib, mangle_id);
 	cout_func(cout, "Hello, World\n");
 	return 0;
 	

@@ -778,6 +778,24 @@ START_TEST(substitution_in_return_type) {
 	*thing = 0xcccccccc;
 	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
+
+
+START_TEST(std_edge_case) {
+BumpAllocator allocator={0};
+	IdentifierData d;
+	const char * mangled_name;
+	uint32_t * thing;
+	d=createGlobalIdentifierData("cout", (const char * []){
+			"std"
+			,NULL
+		}, &allocator);
+	mangled_name=mangle(&d,&allocator);
+	ck_assert_str_eq(mangled_name, "_ZSt4cout");
+	thing = bump_alloc(&allocator, 4);
+	*thing = 0xcccccccc;
+	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
+} END_TEST
+
 START_TEST(demangle_test) {
 	BumpAllocator allocator={0};
 	IdentifierData d;
@@ -821,6 +839,7 @@ START_TEST(demangle_substitution_test) {
 	d=demangle(mangled_name,&allocator);
 	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
 } END_TEST
+
 int main(void){
 	const TTest * all_mangle_tests[]={
 		dont_mangle_unnested_global,
@@ -847,6 +866,7 @@ int main(void){
 		substitution_into_function_pointer,
 		special_method_test,
 		substitution_in_return_type,
+		std_edge_case,
 		NULL
 	};
 	Suite *s;

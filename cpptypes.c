@@ -38,7 +38,7 @@ const TypeIdentifier TYPE ## _lvalue_ref_identifier = { \
 	.methodnt.isidentifier=0, \
 	.member_pointers=qualifierless_pointers_end, \
 	.member_pointers_end=qualifierless_pointers_end, \
-	.member_auxdata_len=0, \
+	.member_auxdata_len=1, \
 	.member_ref=LVALUEREF, \
 	.type_length=SIZEOF(STR)+1, \
 	.member_can_have_substitution=1 \
@@ -121,7 +121,12 @@ const TypeIdentifier ellipsis_identifier = {
 	.member_can_have_substitution=0 
 };
 
-const char * std_namespace_string= "St";
+const LenId std_namespace_len_id = {
+	.full_id="St",
+	.full_id_len=2,
+	.id="St",
+	.id_len=2
+};
 TYPE_IDENTIFIER(std_allocator, "Sa")
 TYPE_IDENTIFIER(std_basicstring, "Sb")
 TYPE_IDENTIFIER(std_iostream, "Sd")
