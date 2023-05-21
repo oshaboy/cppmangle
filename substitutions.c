@@ -319,7 +319,6 @@ const char * mangleTypeWithSubstitution(
 					nest_count,
 					argnum_buf
 				);
-
 				bufptr+=strlen(s);
 			} else {
 				mangleType(ti->method.member_return_type,bufptr);

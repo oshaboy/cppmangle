@@ -42,7 +42,6 @@ TYPE_IDENTIFIER_DECL(char16_t)
 TYPE_IDENTIFIER_DECL(char32_t)
 extern const char * ellipsis_string;
 extern const TypeIdentifier ellipsis_identifier;
-extern const char * std_namespace_string;
 TYPE_IDENTIFIER_DECL(std_allocator)
 TYPE_IDENTIFIER_DECL(std_basicstring)
 TYPE_IDENTIFIER_DECL(std_iostream)

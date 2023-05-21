@@ -20,6 +20,7 @@ typedef struct {
 typedef enum {
 	VALUE=0,
 	LVALUEREF,
+	CONST_LVALUEREF,
 	RVALUEREF
 } REF;
 /* Is the arithemtic type real or one of the ccomplex types? */
@@ -94,7 +95,7 @@ typedef enum {
 	INCREMENT_OPERATOR,
 	DECREMENT_OPERATOR,
 	COMMA_OPERATOR,
-	ARROW_STAR_OPERATOR,
+	ARROW_MEMBER_OPERATOR,
 	ARROW_OPERATOR,
 	CALL_OPERATOR,
 	ARRAY_ACCESS_OPERATOR,
@@ -149,7 +150,6 @@ typedef union {
 } MethodData;
 /*
 Identifies a Type
-
 */
 struct TypeIdentifier {
 	AuxilliaryTypeData auxdata;

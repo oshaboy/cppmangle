@@ -18,8 +18,8 @@ size_t getSubArrLen(const MethodData * d);
 
 #define SPECIAL_METHOD(STR) \
 	(LenId){ \
-	.full_id = NULL, \
-	.full_id_len = 0, \
+	.full_id = STR, \
+	.full_id_len = (sizeof(STR)-1)/sizeof((STR)[0]), \
 	.id = STR, \
 	.id_len = (sizeof(STR)-1)/sizeof((STR)[0]) \
 }
@@ -76,7 +76,7 @@ const LenId special_method_identifiers[] ={
 	[INCREMENT_OPERATOR]=SPECIAL_METHOD("pp"),
 	[DECREMENT_OPERATOR]=SPECIAL_METHOD("mm"),
 	[COMMA_OPERATOR]=SPECIAL_METHOD("cm"),
-	[ARROW_STAR_OPERATOR]=SPECIAL_METHOD("pm"),
+	[ARROW_MEMBER_OPERATOR]=SPECIAL_METHOD("pm"),
 	[ARROW_OPERATOR]=SPECIAL_METHOD("pt"),
 	[CALL_OPERATOR]=SPECIAL_METHOD("cl"),
 	[ARRAY_ACCESS_OPERATOR]=SPECIAL_METHOD("ix")
@@ -180,7 +180,7 @@ static size_t calculate_mangled_length(const IdentifierData * d){
 
 
 char * mangleAuxData(const AuxilliaryTypeData * aux, char * buf){
-	static const char * refchars[]={"", "R", "O"};
+	static const char * refchars[]={"", "R", "RK", "O"};
 	static const char * complexchars[]={"", "C", "G"};
 	char Ps[aux->member_auxdata_len+1];
 	char * Ps_ptr=Ps+aux->member_auxdata_len;
@@ -245,11 +245,9 @@ static void mangleIdentifierAndNests(const IdentifierData * d, char ** result){
 		if (!isstd) *((*result)++) ='N';
 		for (const LenId * ptr=d->member_nests; ptr<d->member_nests+d->member_nest_count; ptr++){
 			strcpy(*result,ptr->full_id); (*result)+=ptr->full_id_len;
-
 		}
 		if (d->ismethod &&d->is_special_method){
 			strcpy (*result, d->member_id.id); *result+=d->member_id.id_len;
-
 		} else {
 			strcpy (*result, d->member_id.full_id); *result+=d->member_id.full_id_len;
 		}
@@ -266,19 +264,16 @@ const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
 	if (d->ismethod){
 		char *result_ptr = result;
 		strcpy (result_ptr, "_Z"); result_ptr+=2;
-
 		mangleIdentifierAndNests(d,&result_ptr);
 		if (d->method.member_argtypes==0){
 			strcpy(result_ptr++, "v"); 
 		} else {
 			for (const TypeIdentifier * ptr=d->method.member_argtypes; ptr<d->method.member_argtypes+d->method.member_arg_count; ptr++){
 				if (ptr->member_can_have_substitution){
-					//char buf[ptr->type_length+5];
 					size_t argnum_buf[d->method.substitution_ds.max_nests];
 					*argnum_buf=ptr-d->method.member_argtypes;
 					size_t * argnums_ptr=argnum_buf;
 					size_t ** argnums_ptr_ptr=&argnums_ptr;
-
 					mangleTypeWithSubstitution(
 						&d->method.substitution_ds,
 						ptr,
@@ -316,7 +311,6 @@ static void setNests(
 ){
 
 	if (str_nests && *str_nests){
-		
 		*nest_count_ptr = 0;
 		for (const char *const * nests_bak=str_nests; *nests_bak; nests_bak++) (*nest_count_ptr)++;
 		LenId * nests_ptr;
@@ -326,13 +320,12 @@ static void setNests(
 				str_nest_ptr<(*nest_count_ptr)+str_nests;
 				str_nest_ptr++
 			) {
-				if (!strcmp("std", *str_nest_ptr)){
+				if (!strcmp("std", *str_nest_ptr))
 					*(nests_ptr++)=std_namespace_len_id;
-				} else {
+				else 
 					*(nests_ptr++)=toLenId(*str_nest_ptr, alloc);
-				}
+				
 			}
-		
 	} else {
 		*nest_count_ptr = 0;
 		*lenid_nests = NULL;
@@ -346,9 +339,7 @@ const TypeIdentifier createTypeId(
 	const unsigned long flags,
 	BumpAllocator * alloc
 ){
-	//char buf[20];
 	size_t name_len = strlen(base);
-	//sprintf(buf, "%zu", name_len);
 	const POINTER_QUALIFIER * end;
 	for (end=ptrs; *end!=END; end++);
 	const size_t ptr_count=end-ptrs;
@@ -445,7 +436,6 @@ const MethodIdentifierData createMethodIdentifierData(const char * id, const cha
 		TypeIdentifier * new_argtypes = bump_alloc(alloc,result.method.member_arg_count*sizeof(TypeIdentifier));
 		memcpy(new_argtypes, args, argtype_n*sizeof(TypeIdentifier));
 		result.method.member_argtypes=new_argtypes;
-		
 		setSubstitutions(&result, alloc);
 	}
 	return result;
