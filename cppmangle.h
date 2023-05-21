@@ -252,7 +252,8 @@ const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag,
 const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * alloc);
 /*Bitmasks for flags*/
 #define LVALUE_REF_BITMASK 1
-#define RVALUE_REF_BITMASK 2
+#define CONST_LVALUE_REF_BITMASK 2
+#define RVALUE_REF_BITMASK 3
 #define IDENTIFIER_BITMASK 4
 #define COMPLEX_BITMASK 8
 #define IMAGINARY_BITMASK 16

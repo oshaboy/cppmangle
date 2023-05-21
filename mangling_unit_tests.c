@@ -840,6 +840,41 @@ START_TEST(demangle_substitution_test) {
 	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
 } END_TEST
 
+START_TEST(const_lvalue_ref_test) {
+	BumpAllocator allocator={0};
+	IdentifierData d;
+	const char * mangled_name;
+	d=createMethodIdentifierData(
+		"const_a",
+		NULL,
+		2,
+		
+		(TypeIdentifier[]){
+			
+			createTypeId(
+				"i",
+				NULL,
+				(POINTER_QUALIFIER[]){END},
+				CONST_LVALUE_REF_BITMASK,
+				&allocator
+			),
+			createTypeId(
+				"i",
+				NULL,
+				(POINTER_QUALIFIER[]){CONSTANT,END},
+				0,
+				&allocator
+			)
+
+		},
+
+		
+		&allocator
+	);
+
+	mangled_name=mangle(&d, &allocator);
+	ck_assert_str_eq(mangled_name, "_Z7const_aRKiPS_");
+} END_TEST
 int main(void){
 	const TTest * all_mangle_tests[]={
 		dont_mangle_unnested_global,
@@ -867,6 +902,7 @@ int main(void){
 		special_method_test,
 		substitution_in_return_type,
 		std_edge_case,
+		const_lvalue_ref_test,
 		NULL
 	};
 	Suite *s;

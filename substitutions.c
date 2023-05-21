@@ -630,12 +630,13 @@ static void setArgSubstitutionsRec(
 	{
 	/*Copy the pointers over to a mutable array*/
 	const size_t pointer_count=ti->member_pointers_end-ti->member_pointers;
-	POINTER_QUALIFIER pointers_copy[pointer_count+1];
+	const size_t const_lvalue_ref=((ti->member_ref==CONST_LVALUEREF)?1:0);
+	POINTER_QUALIFIER pointers_copy[pointer_count+1+const_lvalue_ref];
 	POINTER_QUALIFIER * pointers_copy_end = pointers_copy+pointer_count;
 	memcpy(pointers_copy,ti->member_pointers, pointer_count);
 	ticpy.member_pointers_end=ticpy.member_pointers=pointers_copy;
-	for (
-		POINTER_QUALIFIER * pointer_ptr = pointers_copy;
+	POINTER_QUALIFIER * pointer_ptr= pointers_copy;
+	for (;
 		pointer_ptr<pointers_copy_end;
 		pointer_ptr++
 	){
@@ -682,6 +683,21 @@ static void setArgSubstitutionsRec(
 					COPY_PTR_QUALIFIERS
 				);
 		}
+	}
+	
+	if (ti->member_ref == CONST_LVALUEREF){
+		*pointer_ptr=NO_P|CONSTANT;
+		ticpy.member_pointers_end=pointer_ptr+1;
+		updatePtr(
+			substitution_ds,
+			argnum,
+			&ticpy,
+			substitution_tree_ptr,
+			subnum_ptr,
+			alloc,
+			argument_sub_num_ptr,
+			COPY_PTR_QUALIFIERS
+		);
 	}
 	/*
 	the pointer array is about to go out of scope so 

@@ -102,7 +102,8 @@ void set_auxdata_length(AuxilliaryTypeData * aux){
 			/*add 1 for every bit set except NO_P should only be added if reset*/
 			pointer_char_cnt+=__builtin_popcount(*pointer_ptr ^ NO_P); 
 	}
-	aux->member_auxdata_len= pointer_char_cnt+(aux->member_ref?1:0)+(aux->member_complexity?1:0);
+	static const size_t ref_char_count[]={0,1,2,1};
+	aux->member_auxdata_len= pointer_char_cnt+ref_char_count[aux->member_ref]+(aux->member_complexity?1:0);
 }
 
 /*Returns the length of ti WITHOUT SUBSTITUTIONS*/
