@@ -1,11 +1,14 @@
 CC:=clang
 CPP:=clang++
-FLASG := -Wall  -O3 -fPIC
+FLASG := -Wall  -O3 -fPIC -Wno-non-c-typedef-for-linkage
 OBJECTS := mangle.o allocator.o substitutions.o cpptypes.o demangle.o
 
 all: test libmangle.so 
-debug: FLASG := -Wall -Wno-unused-variable -g -fPIC
-
+debug: FLASG := -Wall \
+	-Wno-non-c-typedef-for-linkage -g  \
+	-fPIC -Wno-unused-command-line-argument \
+	-fsanitize=undefined \
+	-fno-sanitize-recover=undefined
 debug: all 
 test: run_tests
 mangle.o: mangle.c *.h 
