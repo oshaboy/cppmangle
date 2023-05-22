@@ -25,6 +25,7 @@ void * bump_alloc(BumpAllocator * alloc, size_t n){
 		exit(8);
 	}
 	alloc->index+=n;
+	alloc->index=(alloc->index+7)&(~7);
 	return result;
 
 }

@@ -208,9 +208,15 @@ static void findSubstitutionArgRec(
 			);
 		
 		if (arg_sub_ptr->argnum!=RETURN && *argnum<=arg_sub_ptr->argnum) return;
-		POINTER_QUALIFIER pq_buf[from->member_pointers_end-from->member_pointers];
-		char buf2[from->type_length+1];
-		TypeIdentifierDiff diff=subtract(from, &arg_sub_ptr->substitution.from,buf2,pq_buf);
+		TypeIdentifierDiff diff;
+		if (from->member_pointers_end-from->member_pointers > 0){
+			POINTER_QUALIFIER pq_buf[from->member_pointers_end-from->member_pointers];
+			char buf2[from->type_length+1];
+			diff=subtract(from, &arg_sub_ptr->substitution.from,buf2,pq_buf);
+		} else {
+			char buf2[from->type_length+1];
+			diff=subtract(from, &arg_sub_ptr->substitution.from,buf2,NULL);
+		}
 		if (
 			diff.isvalid &&
 			(!*found ||
@@ -360,18 +366,28 @@ static bool does_substitution_exist_rec(
 	const TypeIdentifier * needle, const ArgSubstitutionTree * tree,size_t argument_sub_num, char * buf){
 	if (tree){
 		for (const ArgSubstitutionTree * treeptr=tree; treeptr<tree+argument_sub_num; treeptr++){
-			if (
-				treeptr->subs_of_func_ptr &&
-				does_substitution_exist_rec(
-					needle,
-					treeptr->subs_of_func_ptr,
-					treeptr->argument_sub_num_for_func_ptr,
-					buf)
-			) return true;
+				if (
+					treeptr->argument_sub_num_for_func_ptr &&
+					treeptr->subs_of_func_ptr &&
+					does_substitution_exist_rec(
+						needle,
+						treeptr->subs_of_func_ptr,
+						treeptr->argument_sub_num_for_func_ptr,
+						buf)
+				) return true;
 
-			POINTER_QUALIFIER pq_buf[needle->member_pointers_end-needle->member_pointers];
-			TypeIdentifierDiff diff=subtract(needle, &treeptr->substitution.from, buf,pq_buf);
-			if (diff.isvalid && diff.iseq) return true;
+			if(treeptr->substitution.isvalid){
+				POINTER_QUALIFIER * pq_buf;
+				if (needle->member_pointers_end-needle->member_pointers > 0){
+					POINTER_QUALIFIER pq_buf_arr[needle->member_pointers_end-needle->member_pointers];
+					pq_buf=pq_buf_arr;
+					TypeIdentifierDiff diff=subtract(needle, &treeptr->substitution.from, buf,pq_buf);
+					if (diff.isvalid && diff.iseq) return true;
+				} else {
+					TypeIdentifierDiff diff=subtract(needle, &treeptr->substitution.from, buf,NULL);
+					if (diff.isvalid && diff.iseq) return true;
+				}
+			}
 			
 		}
 	} 
@@ -382,9 +398,14 @@ static bool does_substitution_exist(const TypeIdentifier * needle, const Substit
 	char buf[needle->type_length+5];
 	if (ds->nest_subtitutions){
 		for (Substitution * sub = ds->nest_subtitutions; sub<ds->nest_subtitutions+ds->nest_sub_num;sub++){
-			POINTER_QUALIFIER pq_buf[needle->member_pointers_end-needle->member_pointers];
-			TypeIdentifierDiff diff=subtract(needle, &sub->from, buf,pq_buf);
-			if (diff.isvalid && diff.iseq) return true;
+			if (needle->member_pointers_end-needle->member_pointers>0){
+				POINTER_QUALIFIER pq_buf[needle->member_pointers_end-needle->member_pointers];
+				TypeIdentifierDiff diff=subtract(needle, &sub->from, buf,pq_buf);
+				if (diff.isvalid && diff.iseq) return true;
+			} else {
+				TypeIdentifierDiff diff=subtract(needle, &sub->from, buf,NULL);
+				if (diff.isvalid && diff.iseq) return true;
+			}
 			
 		}
 
@@ -410,7 +431,7 @@ static size_t getSubArrLen(const MethodData * d){
 			result+=return_type->methodnt.isidentifier?1:0;
 		}
 	}	
-	for (const TypeIdentifier * ti=d->member_argtypes; ti<d->member_argtypes+d->member_arg_count; ti++) {
+	for (const TypeIdentifier * ti=d->member_argtypes; d->member_argtypes && ti<d->member_argtypes+d->member_arg_count; ti++) {
 		result+= ti->member_auxdata_len;
 		if (ti->member_ismethodtype){
 			result+=getSubArrLen(&ti->method.method_data)+1;
@@ -465,6 +486,7 @@ static inline void updatePtr(
 	const bool allocate_and_copy_pointer_qualifiers
 ){
 	setLengths(ticpy);
+	//(*substitution_tree_ptr)->argnum=argnum;
 	if (!does_substitution_exist(ticpy, substitution_ds)){
 		char * new_to=bump_alloc(alloc, MAX_SUBSTITUTION_SIZE); 
 		(*substitution_tree_ptr)->substitution.from=*ticpy;
@@ -478,12 +500,14 @@ static inline void updatePtr(
 
 		}
 		(*substitution_tree_ptr)->substitution.to=generateSubstitution(*subnum_ptr, new_to,
-		&(*substitution_tree_ptr)->substitution.to_len); 
+			&(*substitution_tree_ptr)->substitution.to_len); 
 		(*substitution_tree_ptr)->argnum=argnum;
+		(*substitution_tree_ptr)->substitution.isvalid=true;
 		(*subnum_ptr)++; 
 		(*substitution_tree_ptr)++;
 		(*substitution_tree_ptr)->argument_sub_num_for_func_ptr=0;
 		(*substitution_tree_ptr)->subs_of_func_ptr=NULL;
+		(*substitution_tree_ptr)->substitution.isvalid=false;
 		(*argument_sub_num_ptr)++;
 	}
 }
@@ -517,6 +541,7 @@ static void setArgSubstitutionsRec(
 	static const bool COPY_PTR_QUALIFIERS=true;
 	(*substitution_tree_ptr)->subs_of_func_ptr=NULL;
 	(*substitution_tree_ptr)->argument_sub_num_for_func_ptr=0;
+	(*substitution_tree_ptr)->substitution.isvalid=false;
 	if (ti->member_ismethodtype){
 		/*
 		This is the recursive case, If the ti is a method you need to set the substitutions of the return type,
@@ -524,8 +549,12 @@ static void setArgSubstitutionsRec(
 		*/
 		const size_t arrlen = getSubArrLen(&ti->method.method_data);
 		if (arrlen){
-			(*substitution_tree_ptr)->subs_of_func_ptr=bump_alloc(alloc, arrlen*sizeof (ArgSubstitutionTree));
-			ArgSubstitutionTree * argtree2=(*substitution_tree_ptr)->subs_of_func_ptr;
+			ArgSubstitutionTree * argtree2=
+				(*substitution_tree_ptr)->subs_of_func_ptr=
+					bump_alloc(alloc, arrlen*sizeof (ArgSubstitutionTree));
+			argtree2->argument_sub_num_for_func_ptr=0;
+			argtree2->subs_of_func_ptr=NULL;
+			
 			/*
 				temporarily increment the number of substitutions,
 				so the program knows there's a partial function argument here
@@ -744,6 +773,7 @@ void setSubstitutions(MethodIdentifierData * d, BumpAllocator * alloc){
 			char * new_to=bump_alloc(alloc, MAX_SUBSTITUTION_SIZE);
 			substitution_ptr->from=ticpy;
 			substitution_ptr->to=generateSubstitution(subnum, new_to,&substitution_ptr->to_len); 
+			substitution_ptr->isvalid=true;
 			subnum++;
 		}
 	} else {

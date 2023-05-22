@@ -7,7 +7,6 @@
 	const extern TypeIdentifier TYPE ## _identifier; \
 	const extern TypeIdentifier TYPE ## _ptr_identifier; \
 	const extern TypeIdentifier TYPE ## _lvalue_ref_identifier;
-
 #define REF *
 #define REF_REF *
 

@@ -102,7 +102,12 @@ void set_auxdata_length(AuxilliaryTypeData * aux){
 			/*add 1 for every bit set except NO_P should only be added if reset*/
 			pointer_char_cnt+=__builtin_popcount(*pointer_ptr ^ NO_P); 
 	}
-	static const size_t ref_char_count[]={0,1,2,1};
+	static const size_t ref_char_count[]={
+		[VALUE]=0,
+		[LVALUEREF]=1,
+		[CONST_LVALUEREF]=2,
+		[RVALUEREF]=1
+	};
 	aux->member_auxdata_len= pointer_char_cnt+ref_char_count[aux->member_ref]+(aux->member_complexity?1:0);
 }
 
@@ -271,7 +276,7 @@ const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
 		} else {
 			for (const TypeIdentifier * ptr=d->method.member_argtypes; ptr<d->method.member_argtypes+d->method.member_arg_count; ptr++){
 				if (ptr->member_can_have_substitution){
-					size_t argnum_buf[d->method.substitution_ds.max_nests];
+					size_t argnum_buf[d->method.substitution_ds.max_nests+1];
 					*argnum_buf=ptr-d->method.member_argtypes;
 					size_t * argnums_ptr=argnum_buf;
 					size_t ** argnums_ptr_ptr=&argnums_ptr;
@@ -346,7 +351,7 @@ const TypeIdentifier createTypeId(
 	const size_t ptr_count=end-ptrs;
 	POINTER_QUALIFIER * new_ptr_qualifiers=bump_alloc(alloc, sizeof(POINTER_QUALIFIER)*(ptr_count+1));
 	memcpy(new_ptr_qualifiers,ptrs,ptr_count);
-	new_ptr_qualifiers[ptr_count-1]&=~(VOLATILE|RESTRICT);
+	new_ptr_qualifiers[((__ssize_t)ptr_count)-1]&=~(VOLATILE|RESTRICT);
 	TypeIdentifier result ={
 		.methodnt.name=base,
 		.member_ref=flags&0b11,
@@ -371,15 +376,17 @@ const TypeIdentifier createTypeId(
 
 static TypeIdentifier * DeepCopyArgtypes(const TypeIdentifier * ti,size_t arg_count, BumpAllocator * alloc){
 	TypeIdentifier * const new_argtypes=bump_alloc(alloc, arg_count * sizeof(TypeIdentifier));
-	memcpy(new_argtypes, ti, arg_count * sizeof(TypeIdentifier));
-	const TypeIdentifier * ti_ptr=ti;
-	TypeIdentifier * new_argtypes_ptr=new_argtypes;
-	for (;
-		ti_ptr<ti+arg_count;
-		ti_ptr++, new_argtypes_ptr++
-	){
-		if (ti_ptr->member_ismethodtype){
-			new_argtypes_ptr->method.member_argtypes = DeepCopyArgtypes(ti_ptr->method.member_argtypes, ti_ptr->method.member_arg_count, alloc);
+	if (new_argtypes) {
+		memcpy(new_argtypes, ti, arg_count * sizeof(TypeIdentifier));
+		const TypeIdentifier * ti_ptr=ti;
+		TypeIdentifier * new_argtypes_ptr=new_argtypes;
+		for (;
+			ti_ptr<ti+arg_count;
+			ti_ptr++, new_argtypes_ptr++
+		){
+			if (ti_ptr->member_ismethodtype){
+				new_argtypes_ptr->method.member_argtypes = DeepCopyArgtypes(ti_ptr->method.member_argtypes, ti_ptr->method.member_arg_count, alloc);
+			}
 		}
 	}
 	return new_argtypes;

@@ -31,7 +31,7 @@ typedef enum {
 } COMPLEXITY;
 
 /*Every pointer can have any of 3 qualifiers*/
-typedef enum __attribute__((packed)){
+typedef enum  __attribute__ ((packed)) {
 	CONSTANT=1,
 	VOLATILE=2,
 	RESTRICT=4,
@@ -115,7 +115,7 @@ struct AuxilliaryTypeData_{
 	size_t _aux_nest_count; //Types can be in namespaces too. 
 	const LenId * _aux_nests; 
 	size_t _len; //length of the entire thing in a mangled name. 
-	REF _ref ;
+	REF _ref;
 	COMPLEXITY _complexity;
 	CBool _ismethodtype;
 	CBool _can_have_substitution;
@@ -175,6 +175,7 @@ struct Substitution{
 	TypeIdentifier from;
 	const char * to;
 	size_t to_len;
+	CBool isvalid;
 };
 
 typedef struct ArgSubstitutionTree{
@@ -194,8 +195,6 @@ typedef struct {
 
 /*Data of an identifier to mangle*/
 typedef struct {
-	CBool ismethod;
-	CBool is_special_method;
 	union {
 		struct IdentifierData_ d;
 		struct {
@@ -206,6 +205,8 @@ typedef struct {
 		SubstitutionDataStructure substitution_ds;
 		MethodData method_data;
 	} method;
+	CBool ismethod;
+	CBool is_special_method;
 } IdentifierData;
 typedef IdentifierData MethodIdentifierData;
 
