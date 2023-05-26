@@ -102,13 +102,8 @@ void set_auxdata_length(AuxilliaryTypeData * aux){
 			/*add 1 for every bit set except NO_P should only be added if reset*/
 			pointer_char_cnt+=__builtin_popcount(*pointer_ptr ^ NO_P); 
 	}
-	static const size_t ref_char_count[]={
-		[VALUE]=0,
-		[LVALUEREF]=1,
-		[CONST_LVALUEREF]=2,
-		[RVALUEREF]=1
-	};
-	aux->member_auxdata_len= pointer_char_cnt+ref_char_count[aux->member_ref]+(aux->member_complexity?1:0);
+
+	aux->member_auxdata_len= pointer_char_cnt+__builtin_popcount(aux->member_ref)+(aux->member_complexity?1:0);
 }
 
 /*Returns the length of ti WITHOUT SUBSTITUTIONS*/
@@ -186,8 +181,22 @@ static size_t calculate_mangled_length(const IdentifierData * d){
 
 
 char * mangleAuxData(const AuxilliaryTypeData * aux, char * buf){
-	static const char * refchars[]={"", "R", "RK", "O"};
-	static const char * complexchars[]={"", "C", "G"};
+	static const char * refchars[]={
+		[VALUE]="",
+		[LVALUEREF]="R",
+		[CONSTANT_REF|LVALUEREF]="RK",
+		[VOLATILE_REF|LVALUEREF]="VR",
+		[CONSTANT_REF|VOLATILE_REF|LVALUEREF]="VRK",
+		[RVALUEREF]="O",
+		[CONSTANT_REF|RVALUEREF]="OK",
+		[VOLATILE_REF|RVALUEREF]="VO",
+		[CONSTANT_REF|VOLATILE_REF|RVALUEREF]="VOK",
+	};
+	static const char * complexchars[]={
+		[REAL]="",
+		[COMPLEX] ="C",
+		[IMAGINARY]="G"
+	};
 	char Ps[aux->member_auxdata_len+1];
 	char * Ps_ptr=Ps+aux->member_auxdata_len;
 	*(Ps_ptr--)='\0';
@@ -354,11 +363,11 @@ const TypeIdentifier createTypeId(
 	new_ptr_qualifiers[((__ssize_t)ptr_count)-1]&=~(VOLATILE|RESTRICT);
 	TypeIdentifier result ={
 		.methodnt.name=base,
-		.member_ref=flags&0b11,
+		.member_ref=flags&0b1111,
 		.methodnt.name_len=name_len,
 		.methodnt.name_len_len=digCount(name_len),
 		.methodnt.isidentifier=flags&IDENTIFIER_BITMASK?true:false,
-		.member_complexity=(flags&0b11000)>>3,
+		.member_complexity=(flags&0b1100000)>>5,
 		.member_pointers=new_ptr_qualifiers,
 		.member_pointers_end=new_ptr_qualifiers+ptr_count
 		

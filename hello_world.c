@@ -1,12 +1,19 @@
 #include "cppmangle.h"
 #include <dlfcn.h>
-struct ostream{
-	char _d[272];
-};
+#include <stdio.h>
+
 int main(void){
-	void * cpplib=dlopen("clang-cpp.so",RTLD_NOW);
+	
+	void * cpplib;
 	BumpAllocator allocator={0};
-	const IdentifierData cout_id = createGlobalIdentifierData(
+	IdentifierData cout_id;
+	const char * cout_str;
+	std_ostream_64 REF cout;
+	MethodIdentifierData cout_func_id;
+	const char * mangle_id;
+	void (*cout_func)(std_ostream_64 REF, int);
+	cpplib=dlopen("libstdc++.so",RTLD_NOW);
+	cout_id = createGlobalIdentifierData(
 			"cout",
 			(const char * []){
 				"std",
@@ -14,8 +21,10 @@ int main(void){
 			},
 			&allocator
 		);
-	struct ostream REF cout=dlsym(cpplib,mangle(&cout_id, &allocator));
-	MethodIdentifierData cout_func_id=createSpecialMethodIdentifierData(
+	cout_str=mangle(&cout_id, &allocator);
+	printf("%s\n", cout_str);
+	cout=dlsym(cpplib,cout_str);
+	cout_func_id=createSpecialMethodIdentifierData(
 			LEFT_SHIFT_OPERATOR, 
 			(const char * []){
 				"std",
@@ -23,18 +32,14 @@ int main(void){
 			},
 			2,(const TypeIdentifier [2]){
 				std_ostream_lvalue_ref_identifier,
-				createTypeId(
-					char_string,
-					NULL,
-					(POINTER_QUALIFIER []){CONSTANT, END},
-					0,
-					&allocator
-				)
+				int_identifier
 			},
 			&allocator);
-	const char * mangle_id=mangle(&cout_func_id, &allocator);
-	void (*cout_func)(struct ostream REF, const char *)=dlsym(cpplib, mangle_id);
-	cout_func(cout, "Hello, World\n");
+	mangle_id=mangle(&cout_func_id, &allocator);
+	printf("%s\n", mangle_id);
+	cout_func=dlsym(cpplib, mangle_id);
+	cout_func(cout, 42);
+	
 	return 0;
 	
 	

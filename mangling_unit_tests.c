@@ -855,7 +855,7 @@ START_TEST(const_lvalue_ref_test) {
 				"i",
 				NULL,
 				(POINTER_QUALIFIER[]){END},
-				CONST_LVALUE_REF_BITMASK,
+				CONSTANT_REF_BITMASK|LVALUE_REF_BITMASK,
 				&allocator
 			),
 			createTypeId(

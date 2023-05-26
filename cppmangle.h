@@ -20,8 +20,9 @@ typedef struct {
 typedef enum {
 	VALUE=0,
 	LVALUEREF,
-	CONST_LVALUEREF,
-	RVALUEREF
+	RVALUEREF,
+	CONSTANT_REF=0b100,
+	VOLATILE_REF=0b1000
 } REF;
 /* Is the arithemtic type real or one of the ccomplex types? */
 typedef enum {
@@ -207,7 +208,14 @@ typedef struct {
 	} method;
 	CBool ismethod;
 	CBool is_special_method;
+
+	#ifdef __cplusplus
+	/*A classy (heh) interface for C++*/
+
+	const char * mangle(BumpAllocator * alloc);
+	#endif 
 } IdentifierData;
+
 typedef IdentifierData MethodIdentifierData;
 
 /*
@@ -243,21 +251,26 @@ const MethodIdentifierData createMethodIdentifierData(
 const char * mangleType(const TypeIdentifier * ti, char * buf);
 /*Creates a Non Function Pointer Type*/
 const TypeIdentifier createTypeId(
-	const char * base, const char * const* nests, const POINTER_QUALIFIER * ptrs, unsigned long flags, BumpAllocator * alloc);
+	const char * base, const char * const* nests,
+	const POINTER_QUALIFIER * ptrs, unsigned long flags,
+	BumpAllocator * alloc);
 /*Creates a Function Pointer Type*/
 const TypeIdentifier createFunctionPtrTypeId(
-	const TypeIdentifier * returns, size_t arg_n, const TypeIdentifier * args, const char *const * nests,
-	const POINTER_QUALIFIER * ptrs, unsigned long flags, BumpAllocator * alloc);
+	const TypeIdentifier * returns, size_t arg_n,
+	const TypeIdentifier * args, const char *const * nests,
+	const POINTER_QUALIFIER * ptrs, unsigned long flags,
+	BumpAllocator * alloc);
 /*Creates a special method (operator/constructor/destructor)*/
 const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag, const char *const* nests, const size_t argtype_n, const TypeIdentifier * args,BumpAllocator * alloc);
 const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * alloc);
 /*Bitmasks for flags*/
 #define LVALUE_REF_BITMASK 1
-#define CONST_LVALUE_REF_BITMASK 2
-#define RVALUE_REF_BITMASK 3
-#define IDENTIFIER_BITMASK 4
-#define COMPLEX_BITMASK 8
-#define IMAGINARY_BITMASK 16
+#define RVALUE_REF_BITMASK 2
+#define CONSTANT_REF_BITMASK 4
+#define VOLATILE_REF_BITMASK 8
+#define IDENTIFIER_BITMASK 16
+#define COMPLEX_BITMASK 32
+#define IMAGINARY_BITMASK 64
 
 static inline size_t digCount(size_t n){
 	size_t result=0;
@@ -274,6 +287,10 @@ static inline size_t digCount(size_t n){
 
 
 #ifdef __cplusplus
+}
+
+inline const char * IdentifierData::mangle(BumpAllocator * alloc){
+	return ::mangle(this, alloc);
 }
 #endif
 

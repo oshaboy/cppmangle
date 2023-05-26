@@ -47,4 +47,18 @@ TYPE_IDENTIFIER_DECL(std_iostream)
 TYPE_IDENTIFIER_DECL(std_string)
 TYPE_IDENTIFIER_DECL(std_istream)
 TYPE_IDENTIFIER_DECL(std_ostream)
+
+#define OPAQUE_TYPE_DECL(_name, _size) typedef struct {char _[_size];} _name;
+OPAQUE_TYPE_DECL(std_string_64, 32)
+OPAQUE_TYPE_DECL(compat_std_string_64, 8)
+OPAQUE_TYPE_DECL(std_istream_64, 280)
+OPAQUE_TYPE_DECL(std_ostream_64, 272)
+OPAQUE_TYPE_DECL(std_iostream_64, 288)
+OPAQUE_TYPE_DECL(std_vector_64, 288)
+OPAQUE_TYPE_DECL(std_string_32, 24)
+OPAQUE_TYPE_DECL(compat_std_string_32, 4)
+OPAQUE_TYPE_DECL(std_istream_32, 144)
+OPAQUE_TYPE_DECL(std_ostream_32, 140)
+OPAQUE_TYPE_DECL(std_iostream_32, 148)
+OPAQUE_TYPE_DECL(std_vector_32, 12)
 #endif

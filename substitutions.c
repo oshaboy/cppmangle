@@ -249,10 +249,14 @@ static const char * findSubstitution(
 	if (subs->nest_subtitutions){
 		for (Substitution * nest_sub = subs->nest_subtitutions;
 		nest_sub < subs->nest_subtitutions + nest_count; nest_sub++){
-
-			POINTER_QUALIFIER pq_buf[from->member_pointers_end-from->member_pointers];
+			TypeIdentifierDiff diff;
 			char buf2[from->type_length+1];
-			TypeIdentifierDiff diff=subtract(from, &nest_sub->from,buf2,pq_buf);
+			if (from->member_pointers_end-from->member_pointers>0){
+				POINTER_QUALIFIER pq_buf[from->member_pointers_end-from->member_pointers];
+				diff=subtract(from, &nest_sub->from,buf2,pq_buf);
+			} else {
+				diff=subtract(from, &nest_sub->from,buf2,NULL);
+			}
 			if (
 				diff.isvalid &&
 					(!*found ||
@@ -659,7 +663,7 @@ static void setArgSubstitutionsRec(
 	{
 	/*Copy the pointers over to a mutable array*/
 	const size_t pointer_count=ti->member_pointers_end-ti->member_pointers;
-	const size_t const_lvalue_ref=((ti->member_ref==CONST_LVALUEREF)?1:0);
+	const size_t const_lvalue_ref=((ti->member_ref==(CONSTANT_REF|LVALUEREF))?1:0);
 	POINTER_QUALIFIER pointers_copy[pointer_count+1+const_lvalue_ref];
 	POINTER_QUALIFIER * pointers_copy_end = pointers_copy+pointer_count;
 	memcpy(pointers_copy,ti->member_pointers, pointer_count);
@@ -714,7 +718,7 @@ static void setArgSubstitutionsRec(
 		}
 	}
 	
-	if (ti->member_ref == CONST_LVALUEREF){
+	if (ti->member_ref & CONSTANT_REF){
 		*pointer_ptr=NO_P|CONSTANT;
 		ticpy.member_pointers_end=pointer_ptr+1;
 		updatePtr(

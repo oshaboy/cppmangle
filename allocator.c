@@ -1,5 +1,5 @@
 #include "allocator.h"
-#define INITIAL_CAPACITY 8192
+#define INITIAL_CAPACITY 2048
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
