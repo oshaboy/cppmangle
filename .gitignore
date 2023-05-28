@@ -55,3 +55,4 @@ mangle.cpp
 *.s
 hello_world.c
 build/*
+mangling_unit_tests
