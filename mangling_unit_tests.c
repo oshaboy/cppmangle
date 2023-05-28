@@ -9,417 +9,230 @@
 
 
 
-START_TEST(dont_mangle_unnested_global){
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createGlobalIdentifierData("myglobal", (const char * []){
-			"Nester"
-			,NULL
-		}, &allocator);
-	mangled_name=mangle(&d,&allocator);
-	ck_assert_str_eq(mangled_name, "_ZN6Nester8myglobalE");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
-} END_TEST
 START_TEST(nested_global){
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createGlobalIdentifierData("myglobal", NULL, &allocator);
-	mangled_name=mangle(&d,&allocator);
+	const char * mangled_name=mangle("myglobal",1,NOT_METHOD, "Nester");
+	ck_assert_str_eq(mangled_name, "_ZN6Nester8myglobalE");
+} END_TEST
+START_TEST(dont_mangle_unnested_global){
+	const char * mangled_name=mangle("myglobal",0,NOT_METHOD);
 	ck_assert_str_eq(mangled_name, "myglobal");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 START_TEST(void_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData("void_func", NULL,0, NULL, &allocator);
-	mangled_name=mangle(&d, &allocator);
+	const char * mangled_name=mangle("void_func",0,0);
 	ck_assert_str_eq(mangled_name, "_Z9void_funcv");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(int_int_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-	"add", NULL,2, (const TypeIdentifier []){
+	const char * mangled_name=mangle("add", 0,2,
 		int_identifier,
 		int_identifier
-	},
-	&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z3addii");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(nest_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"nested", (const char * []){
-			"Nester"
-			,NULL
-		}
-		,
+	const char * mangled_name=mangle(
+		"nested",
+		1,
 		0,
-		NULL,
-		&allocator
+		"Nester"
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_ZN6Nester6nestedEv");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 
 } END_TEST
 
 START_TEST(named_argument_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"named", NULL,
+	const char * mangled_name=mangle(
+		"named", 0,
 		1,
-		(TypeIdentifier[]){
-			createTypeId(
-				"MyName",
-				NULL,
-				(POINTER_QUALIFIER[]){END},
-				IDENTIFIER_BITMASK,
-				&allocator
-				)
-		},
-		&allocator
+		createTypeId(
+			"MyName",
+			(POINTER_QUALIFIER[]){END},
+			IDENTIFIER_BITMASK,
+			0
+		)
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z5named6MyName");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 
 } END_TEST
 
 START_TEST(pointer_argument_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"ptr", NULL,
+	const char * mangled_name=mangle(
+		"ptr", 0,
 		1,
-		(TypeIdentifier[]){
-			int_ptr_identifier
-		},
-		&allocator
+		int_ptr_identifier
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z3ptrPi");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 
 } END_TEST
 
 
 START_TEST(fully_compressed_pointer_argument_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"ptr", NULL,
+	const char * mangled_name=mangle(
+		"ptr", 0,
 		2,
-		(TypeIdentifier[]){
-			int_ptr_identifier,
-			int_ptr_identifier
-
-		},
-		&allocator
+		int_ptr_identifier,
+		int_ptr_identifier
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z3ptrPiS_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 
 START_TEST(partially_compressed_pointer_argument_function) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"ptr", NULL,
+	const char * mangled_name=mangle(
+		"ptr", 0,
 		3,
-		(TypeIdentifier[]){
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,0,END},
-				0,
-				&allocator
-			)
-
-		},
-		&allocator
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,END},
+			0,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,END},
+			0,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,0,END},
+			0,
+			0
+		)
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z3ptrPiPS_PS0_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(all_subs_in_first_argument) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"all_in_first", NULL,
+	const char * mangled_name=mangle(
+		"all_in_first", 0,
 		3,
-		(TypeIdentifier[]){
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,END},
-				0,
-				&allocator
-			)
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,0,END},
+			0,0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,END},
+			0,0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,END},
+			0,0
+		)
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z12all_in_firstPPPiS_S0_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(compressed_pointer_argument_function_with_nest) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
-		"ptr", (const char * []){
-			"Nester"
-			,NULL
-		},
-		3,
-		(TypeIdentifier[]){
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,0,END},
-				0,
-				&allocator
-			)
+	const char * mangled_name=mangle(
+		"ptr", 1, 3,
+		"Nester",
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,END},
+			0,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,END},
+			0,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,0,0,END},
+			0,
+			0
+		)
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_ZN6Nester3ptrEPiPS0_PS1_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(complex_number_argument) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"ccomplex",
-		NULL,
+		0,
 		2,
-		(TypeIdentifier[]){
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){0,END},
-				COMPLEX_BITMASK,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){END},
-				COMPLEX_BITMASK,
-				&allocator
-			)
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){0,END},
+			COMPLEX_BITMASK,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){END},
+			COMPLEX_BITMASK,
+			0
+		)
 			
-
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z8ccomplexPCiS_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 START_TEST(constant_pointer_argument) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"cpointer",
-		NULL,
+		0,
 		1,
-		(TypeIdentifier[]){
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT,END},
-				0,
-				&allocator
-			)
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){CONSTANT,END},
+			0,
+			0
+		)
 			
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
 	ck_assert_str_eq(mangled_name, "_Z8cpointerPKi");
 } END_TEST
 
 START_TEST(ellipsis_argument) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"printf",
-		NULL,
+		0,
 		2,
-		
-		(TypeIdentifier[]){
-			char_ptr_identifier,
-			ellipsis_identifier
-			
-
-		},
-		&allocator
+		char_ptr_identifier,
+		ellipsis_identifier
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z6printfPcz");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(void_function_pointer_argument) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"voidfunc",
-		NULL,
+		0,
 		1,
 		
-		(TypeIdentifier[]){
-			createFunctionPtrTypeId(
-				NULL,
-				0,
-				NULL,
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			)
+		createFunctionPtrTypeId(
+			NULL,
+			0,
+			NULL,
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		)
 			
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z8voidfuncPFvvE");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(function_pointer_argument_no_subs) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"fptr",
-		NULL,
+		0,
 		1,
 		
-		(TypeIdentifier[]){
 			createFunctionPtrTypeId(
 				&int_identifier,
 				2,
@@ -434,289 +247,200 @@ START_TEST(function_pointer_argument_no_subs) {
 			)
 			
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z4fptrPFiiiE");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(pointer_qualifier_order) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"ptr_order",
-		NULL,
+		0,
 		1,
-		
-		(TypeIdentifier[]){
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
-				0,
-				&allocator
-			),
+	
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			0,
+			0
+		)
 
-		},
-		&allocator
+		
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z9ptr_orderPrVPKi");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 
 START_TEST(pointer_qualifier_substitution) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"ptr_order_subs",
-		NULL,
+		0,
 		4,
 		
-		(TypeIdentifier[]){
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
-				0,
-				&allocator
-			)
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			0,
+			0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){0,END},
+			0,
+			0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
+			0,
+			0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			0,
+			0
+		)
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z14ptr_order_subsPrVPKiPiPVS0_S2_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
-	d=createMethodIdentifierData(
+	mangled_name=mangle(
 		"ptr_mangle",
-		NULL,
+		0,
 		5,
-		
-		(TypeIdentifier[]){
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){0,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){RESTRICT,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
-				0,
-				&allocator
-			),
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT,0,END},
-				0,
-				&allocator
-			),
-
-		},
-		&allocator
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			0,0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){0,0,END},
+			0,0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){RESTRICT,0,END},
+			0,0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
+			0,0
+		),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT,0,END},
+			0,
+			0
+		)
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z10ptr_manglePrVPKiPPiPrS3_PVS0_PS0_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(ignore_restrict_and_volatile_on_last) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"funcsub",
-		NULL,
+		0,
 		1,
 		
-		(TypeIdentifier[]){
-			createTypeId(
-				int_string,
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,RESTRICT|VOLATILE,END},
-				0,
-				&allocator
-			),
+		createTypeId(
+			int_string,
+			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,RESTRICT|VOLATILE,END},
+			0,
+			0
+		)
 
-		},
-		&allocator
+		
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z7funcsubPrVPKi");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(substitution_in_function_pointer) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"funcsub",
-		NULL,
+		0,
 		2,
 		
-		(TypeIdentifier[]){
-			createFunctionPtrTypeId(
-				&int_identifier,
-				2,
-				(TypeIdentifier[]){
-					int_ptr_identifier,
-					int_ptr_identifier
-				},
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			),
-			int_ptr_identifier
+		createFunctionPtrTypeId(
+			&int_identifier,
+			2,
+			(TypeIdentifier[]){
+				int_ptr_identifier,
+				int_ptr_identifier
+			},
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		),
+		int_ptr_identifier
 
-		},
-		&allocator
+		
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z7funcsubPFiPiS_ES_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(substitution_into_function_pointer) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"funcsub",
-		NULL,
+		0,
 		2,
 		
-		(TypeIdentifier[]){
-			int_ptr_identifier,
-			createFunctionPtrTypeId(
-				&int_identifier,
-				2,
-				(TypeIdentifier[]){
-					int_ptr_identifier,
-					int_ptr_identifier
-				},
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			)
 
-		},
-		&allocator
+		int_ptr_identifier,
+		createFunctionPtrTypeId(
+			&int_identifier,
+			2,
+			(TypeIdentifier[]){
+				int_ptr_identifier,
+				int_ptr_identifier
+			},
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		)
+
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z7funcsubPiPFiS_S_E");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(substitution_of_function_pointer) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"funcsub",
-		NULL,
+		0,
 		2,
-		
-		(TypeIdentifier[]){
-			createFunctionPtrTypeId(
-				&int_identifier,
-				2,
-				(TypeIdentifier[]){
-					int_ptr_identifier,
-					int_ptr_identifier
-				},
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			),
-			createFunctionPtrTypeId(
-				&int_identifier,
-				2,
-				(TypeIdentifier[]){
-					int_ptr_identifier,
-					int_ptr_identifier
-				},
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			)
+		createFunctionPtrTypeId(
+			&int_identifier,
+			2,
+			(TypeIdentifier[]){
+				int_ptr_identifier,
+				int_ptr_identifier
+			},
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		),
+		createFunctionPtrTypeId(
+			&int_identifier,
+			2,
+			(TypeIdentifier[]){
+				int_ptr_identifier,
+				int_ptr_identifier
+			},
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		)
 
-		},
-		&allocator
+		
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z7funcsubPFiPiS_ES1_");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(special_method_test) {
@@ -738,7 +462,7 @@ START_TEST(special_method_test) {
 		&allocator
 
 	);
-	mangled_name=mangle(&d,&allocator);
+	mangled_name=mangleIdentifierData(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_ZN7MyClassC1Eii");
 	thing = bump_alloc(&allocator, 4);
 	*thing = 0xcccccccc;
@@ -747,53 +471,32 @@ START_TEST(special_method_test) {
 
 START_TEST(substitution_in_return_type) {
 	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"funcsub",
-		NULL,
+		0,
 		1,
 		
-		(TypeIdentifier[]){
-			createFunctionPtrTypeId(
-				&int_ptr_identifier,
-				2,
-				(TypeIdentifier[]){
-					int_ptr_identifier,
-					int_ptr_identifier
-				},
-				NULL,
-				(POINTER_QUALIFIER[]){0,END}, 
-				0,
-				&allocator
-			)
+		createFunctionPtrTypeId(
+			&int_ptr_identifier,
+			2,
+			(TypeIdentifier[]){
+				int_ptr_identifier,
+				int_ptr_identifier
+			},
+			NULL,
+			(POINTER_QUALIFIER[]){0,END}, 
+			0,
+			&allocator
+		)
 
-		},
-		&allocator
 	);
-	mangled_name=mangle(&d,&allocator);
 	ck_assert_str_eq(mangled_name, "_Z7funcsubPFPiS_S_E");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 
 START_TEST(std_edge_case) {
-BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	uint32_t * thing;
-	d=createGlobalIdentifierData("cout", (const char * []){
-			"std"
-			,NULL
-		}, &allocator);
-	mangled_name=mangle(&d,&allocator);
+	const char * mangled_name=mangle("cout", 1,NOT_METHOD, "std");
 	ck_assert_str_eq(mangled_name, "_ZSt4cout");
-	thing = bump_alloc(&allocator, 4);
-	*thing = 0xcccccccc;
-	ck_assert_mem_eq((allocator.buffer+allocator.index), "\xdd\xdd\xdd\xdd",4);
 } END_TEST
 
 START_TEST(demangle_test) {
@@ -815,7 +518,7 @@ START_TEST(demangle_test) {
 	ck_assert_str_eq(d.method.member_argtypes[2].methodnt.name, "id");
 	ck_assert_str_eq(d.method.member_argtypes[3].method.member_argtypes->methodnt.name, "c");
 	ck_assert_str_eq(d.method.member_argtypes[3].method.member_return_type->methodnt.name, "i");
-	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+	ck_assert_str_eq(mangleIdentifierData(&d,&allocator), mangled_name);
 } END_TEST
 START_TEST(demangle_nest_test) {
 	BumpAllocator allocator={0};
@@ -829,7 +532,7 @@ START_TEST(demangle_nest_test) {
 	ck_assert_str_eq(d.method.member_argtypes->member_aux_nests->id,"MyNamespace");
 
 	ck_assert_int_eq(d.method.member_argtypes->member_aux_nest_count,1);
-	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+	ck_assert_str_eq(mangleIdentifierData(&d,&allocator), mangled_name);
 } END_TEST
 
 START_TEST(demangle_substitution_test) {
@@ -837,42 +540,29 @@ START_TEST(demangle_substitution_test) {
 	IdentifierData d;
 	const char * mangled_name="_Z4funcPiS_";
 	d=demangle(mangled_name,&allocator);
-	ck_assert_str_eq(mangle(&d,&allocator), mangled_name);
+	ck_assert_str_eq(mangleIdentifierData(&d,&allocator), mangled_name);
 } END_TEST
 
 START_TEST(const_lvalue_ref_test) {
-	BumpAllocator allocator={0};
-	IdentifierData d;
-	const char * mangled_name;
-	d=createMethodIdentifierData(
+	const char * mangled_name=mangle(
 		"const_a",
-		NULL,
+		0,
 		2,
-		
-		(TypeIdentifier[]){
-			
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){END},
-				CONSTANT_REF_BITMASK|LVALUE_REF_BITMASK,
-				&allocator
-			),
-			createTypeId(
-				"i",
-				NULL,
-				(POINTER_QUALIFIER[]){CONSTANT,END},
-				0,
-				&allocator
-			)
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){END},
+			CONSTANT_REF_BITMASK|LVALUE_REF_BITMASK,
+			0
+		),
+		createTypeId(
+			"i",
+			(POINTER_QUALIFIER[]){CONSTANT,END},
+			0,
+			0
+		)
 
-		},
 
-		
-		&allocator
 	);
-
-	mangled_name=mangle(&d, &allocator);
 	ck_assert_str_eq(mangled_name, "_Z7const_aRKiPS_");
 } END_TEST
 int main(void){

@@ -273,7 +273,7 @@ static void mangleIdentifierAndNests(const IdentifierData * d, char ** result){
 }
 const size_t RETURN = (size_t)-1;
 /*Mangle Identifier*/
-const char * mangle(const IdentifierData * d, BumpAllocator * alloc){
+const char * mangleIdentifierData(const IdentifierData * d, BumpAllocator * alloc){
 	const size_t mangled_id_length = calculate_mangled_length(d);
 	char *const result = bump_alloc(alloc,mangled_id_length+1);
 	if (d->ismethod){
@@ -347,7 +347,7 @@ static void setNests(
 	}
 }
 
-const TypeIdentifier createTypeId(
+const TypeIdentifier createTypeId_(
 	const char * base,
 	const char * const * nests,
 	const POINTER_QUALIFIER * ptrs,
@@ -355,6 +355,8 @@ const TypeIdentifier createTypeId(
 	BumpAllocator * alloc
 ){
 	size_t name_len = strlen(base);
+	char * base_cpy=bump_alloc(alloc,name_len+1);
+	strcpy(base_cpy, base);
 	const POINTER_QUALIFIER * end;
 	for (end=ptrs; *end!=END; end++);
 	const size_t ptr_count=end-ptrs;
@@ -362,7 +364,7 @@ const TypeIdentifier createTypeId(
 	memcpy(new_ptr_qualifiers,ptrs,ptr_count);
 	new_ptr_qualifiers[((__ssize_t)ptr_count)-1]&=~(VOLATILE|RESTRICT);
 	TypeIdentifier result ={
-		.methodnt.name=base,
+		.methodnt.name=base_cpy,
 		.member_ref=flags&0b1111,
 		.methodnt.name_len=name_len,
 		.methodnt.name_len_len=digCount(name_len),
@@ -413,14 +415,23 @@ const TypeIdentifier createFunctionPtrTypeId(
 ){
 	const POINTER_QUALIFIER * end;
 	for (end=ptrs; *end!=END; end++);
+	const size_t ptr_count=end-ptrs;
+	POINTER_QUALIFIER * new_ptr_qualifiers=bump_alloc(alloc, sizeof(POINTER_QUALIFIER)*(ptr_count+1));
+	memcpy(new_ptr_qualifiers,ptrs,ptr_count);
+	TypeIdentifier * return_copy;
+	if (returns) {
+		return_copy=bump_alloc(alloc, sizeof(TypeIdentifier));
+		*return_copy=*returns;
+	} else
+		return_copy=NULL;
 	TypeIdentifier result={
-		.member_pointers=ptrs,
-		.member_pointers_end=end,
+		.member_pointers=new_ptr_qualifiers,
+		.member_pointers_end=new_ptr_qualifiers+ptr_count,
 		.member_ref=flags&0b11,
 		.member_complexity=REAL,
 		.member_ismethodtype=true,
 		.method.member_argtypes=DeepCopyArgtypes(args, arg_count, alloc),
-		.method.member_return_type=returns,
+		.method.member_return_type=return_copy,
 		.method.member_arg_count=arg_count,
 		.member_can_have_substitution=true
 	};
@@ -440,7 +451,13 @@ const IdentifierData createGlobalIdentifierData(const char * id, const char * co
 
 	return result;
 }
-const MethodIdentifierData createMethodIdentifierData(const char * id, const char ** nests, const size_t argtype_n, const TypeIdentifier * args,BumpAllocator * alloc){
+const MethodIdentifierData createMethodIdentifierData(
+	const char * id,
+	const char ** nests,
+	const size_t argtype_n,
+	const TypeIdentifier * args,
+	BumpAllocator * alloc
+){
 	
 	MethodIdentifierData result ={
 		.ismethod=true,

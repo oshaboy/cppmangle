@@ -54,3 +54,4 @@ mangle_test.c
 mangle.cpp
 *.s
 hello_world.c
+build/*

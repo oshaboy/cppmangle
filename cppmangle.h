@@ -208,12 +208,7 @@ typedef struct {
 	} method;
 	CBool ismethod;
 	CBool is_special_method;
-
-	#ifdef __cplusplus
-	/*A classy (heh) interface for C++*/
-
-	const char * mangle(BumpAllocator * alloc);
-	#endif 
+ 
 } IdentifierData;
 
 typedef IdentifierData MethodIdentifierData;
@@ -240,7 +235,9 @@ of which one it is.
 #define member_nests id_data.d._nests
 
 /* mangles an IdentifierData structure */
-const char * mangle(const IdentifierData * d, BumpAllocator * alloc);
+const char * mangleIdentifierData(const IdentifierData * d, BumpAllocator * alloc);
+
+
 /*create IdentifierData structure for a global variable*/
 const IdentifierData createGlobalIdentifierData(const char * id, const char *const* nests, BumpAllocator * alloc);
 /*creates IdentifierData structure for methodData*/
@@ -250,7 +247,7 @@ const MethodIdentifierData createMethodIdentifierData(
 /*Mangles a Type without substitutions*/
 const char * mangleType(const TypeIdentifier * ti, char * buf);
 /*Creates a Non Function Pointer Type*/
-const TypeIdentifier createTypeId(
+const TypeIdentifier createTypeId_(
 	const char * base, const char * const* nests,
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
@@ -282,6 +279,20 @@ static inline size_t digCount(size_t n){
 	return result;
 }
 
+
+const char * mangle(
+	const char * id,
+	size_t nests_n,
+	size_t argtype_n,
+	...
+);
+const TypeIdentifier createTypeId(
+	const char * base,
+	const POINTER_QUALIFIER * ptrs,
+	unsigned long flags,
+	size_t nests_n,
+	...);
+#define NOT_METHOD ((size_t)-1)
 #include "cpptypes.h"
 
 
@@ -289,9 +300,6 @@ static inline size_t digCount(size_t n){
 #ifdef __cplusplus
 }
 
-inline const char * IdentifierData::mangle(BumpAllocator * alloc){
-	return ::mangle(this, alloc);
-}
 #endif
 
 #endif
