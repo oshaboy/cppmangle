@@ -6,7 +6,11 @@
 	const extern char * TYPE ## _string; \
 	const extern TypeIdentifier TYPE ## _identifier; \
 	const extern TypeIdentifier TYPE ## _ptr_identifier; \
-	const extern TypeIdentifier TYPE ## _lvalue_ref_identifier;
+	const extern TypeIdentifier TYPE ## _const_ptr_identifier; \
+	const extern TypeIdentifier TYPE ## _lvalue_ref_identifier; \
+	const extern TypeIdentifier TYPE ## _const_lvalue_ref_identifier; \
+	const extern TypeIdentifier TYPE ## _rvalue_ref_identifier;
+
 #define REF *
 #define REF_REF *
 
@@ -54,7 +58,8 @@ OPAQUE_TYPE_DECL(compat_std_string_64, 8)
 OPAQUE_TYPE_DECL(std_istream_64, 280)
 OPAQUE_TYPE_DECL(std_ostream_64, 272)
 OPAQUE_TYPE_DECL(std_iostream_64, 288)
-OPAQUE_TYPE_DECL(std_vector_64, 288)
+OPAQUE_TYPE_DECL(std_vector_64, 24)
+
 OPAQUE_TYPE_DECL(std_string_32, 24)
 OPAQUE_TYPE_DECL(compat_std_string_32, 4)
 OPAQUE_TYPE_DECL(std_istream_32, 144)

@@ -209,6 +209,7 @@ TypeIdentifier demangle_type(
 		result.member_aux_nest_count = count_nests(*mangled_name_ptr);
 		LenId * nests=bump_alloc(alloc, sizeof(LenId)*result.member_aux_nest_count);
 		LenId * nest_buffer_ptr=nests;
+
 		while (nest_buffer_ptr<nests+result.member_aux_nest_count){
 			*(nest_buffer_ptr++)=demangle_identifier(
 				mangled_name_ptr, 
@@ -216,8 +217,12 @@ TypeIdentifier demangle_type(
 			);
 		}
 		{
-			size_t chars_in_identifier;
-			assert(sscanf(*mangled_name_ptr, "%zu", &chars_in_identifier)==1);
+			size_t chars_in_identifier=0;
+			{
+			const int x=sscanf(*mangled_name_ptr, "%zu", &chars_in_identifier);
+			assert(x==1);
+			(void)x;
+			}
 			result.methodnt.name_len=chars_in_identifier;
 			result.methodnt.name_len_len=digCount(chars_in_identifier);
 			char * id = bump_alloc(alloc, chars_in_identifier+1);
@@ -281,6 +286,8 @@ TypeIdentifier demangle_type(
 			(*mangled_name_ptr)++;
 		}
 	}
+
+	
 	result.type_length=calculate_type_length(&result);
 	return result;
 }
@@ -305,11 +312,13 @@ const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * a
 		char ** sub_ptr=subs;
 		mangled_name++;
 		result.member_nest_count=count_nests(mangled_name);
+
 		LenId * nests=bump_alloc(alloc, sizeof(LenId)*result.member_nest_count);
 		LenId * nest_ptr=nests;
 		//LenId * nest_buffer_ptr=nest_buffer;
 		size_t nest_len_sum=0;
 		while (nest_ptr<nests+result.member_nest_count){
+			
 			*nest_ptr=demangle_identifier(
 				&mangled_name, 
 				alloc
@@ -345,8 +354,9 @@ const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * a
 		TypeIdentifier * ti_ptr;
 		result.method.member_argtypes=ti_ptr=bump_alloc(alloc, result.method.member_arg_count*sizeof(TypeIdentifier));
 
-		while(*mangled_name!='\0')
+		while(*mangled_name!='\0'){
 			*(ti_ptr++)=demangle_type(&mangled_name,&subs,alloc);
+		}
 		
 
 		

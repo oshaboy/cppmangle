@@ -252,7 +252,7 @@ const TypeIdentifier createTypeId_(
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
 /*Creates a Function Pointer Type*/
-const TypeIdentifier createFunctionPtrTypeId(
+const TypeIdentifier createFunctionPtrTypeId_(
 	const TypeIdentifier * returns, size_t arg_n,
 	const TypeIdentifier * args, const char *const * nests,
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
@@ -286,12 +286,24 @@ const char * mangle(
 	size_t argtype_n,
 	...
 );
-const TypeIdentifier createTypeId(
+const TypeIdentifier createTypeIdentifier(
 	const char * base,
 	const POINTER_QUALIFIER * ptrs,
 	unsigned long flags,
 	size_t nests_n,
 	...);
+const TypeIdentifier createFunctionPtrTypeIdentifier(
+	const TypeIdentifier * returns,
+	const POINTER_QUALIFIER * ptrs,
+	unsigned long flags,
+	size_t nests_n, size_t arg_n,
+	...);
+const char * mangleSpecialMethod(
+	SPECIAL_METHOD tag,
+	size_t nests_n,
+	const size_t argtype_n,
+	...
+);
 #define NOT_METHOD ((size_t)-1)
 #include "cpptypes.h"
 

@@ -404,7 +404,7 @@ static TypeIdentifier * DeepCopyArgtypes(const TypeIdentifier * ti,size_t arg_co
 
 }
 
-const TypeIdentifier createFunctionPtrTypeId(
+const TypeIdentifier createFunctionPtrTypeId_(
 	const TypeIdentifier * returns,
 	const size_t arg_count,
 	const TypeIdentifier * args,
