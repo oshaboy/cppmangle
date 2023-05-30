@@ -53,6 +53,18 @@ const TypeIdentifier TYPE ## _lvalue_ref_identifier = { \
 	.methodnt.isidentifier=0, \
 	.member_pointers=qualifierless_pointers_end, \
 	.member_pointers_end=qualifierless_pointers_end, \
+	.member_auxdata_len=1, \
+	.member_ref=LVALUEREF, \
+	.type_length=SIZEOF(STR)+1, \
+	.member_can_have_substitution=1 \
+}; \
+const TypeIdentifier TYPE ## _const_lvalue_ref_identifier = { \
+	.methodnt.name=STR, \
+	.methodnt.name_len=SIZEOF(STR), \
+	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
+	.methodnt.isidentifier=0, \
+	.member_pointers=qualifierless_pointers_end, \
+	.member_pointers_end=qualifierless_pointers_end, \
 	.member_auxdata_len=2, \
 	.member_ref=CONSTANT_REF|LVALUEREF, \
 	.type_length=SIZEOF(STR)+2, \
@@ -151,6 +163,18 @@ const TypeIdentifier void_ptr_const_lvalue_ref_identifier = {
 	.member_auxdata_len=3, 
 	.member_ref=CONSTANT_REF|LVALUEREF, 
 	.type_length=4, 
+	.member_can_have_substitution=1 
+};
+const TypeIdentifier void_ptr_rvalue_ref_identifier = { 
+	.methodnt.name="v", 
+	.methodnt.name_len=1, 
+	.methodnt.name_len_len=0, /*If it's primitive it doesn't matter anyway */ \
+	.methodnt.isidentifier=0, 
+	.member_pointers=qualifierless_pointers_end-1, 
+	.member_pointers_end=qualifierless_pointers_end, 
+	.member_auxdata_len=2, 
+	.member_ref=RVALUEREF, 
+	.type_length=3, 
 	.member_can_have_substitution=1 
 };
 TYPE_IDENTIFIER(std_nullptr_t, "Dn")
