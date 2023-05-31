@@ -269,31 +269,32 @@ const inline static Template createConstTemplate(TypeIdentifier ti,__intmax_t va
 const IdentifierData createGlobalIdentifierData(
 	const char * id,
 	const char *const* nests,
-	const Template *,
+	size_t template_n, const Template *,
 	BumpAllocator * alloc);
 /*creates IdentifierData structure for methodData*/
 const MethodIdentifierData createMethodIdentifierData(
 	const char * id, const char ** nests, size_t argtype_n,
-	const TypeIdentifier * args, const Template * , BumpAllocator * alloc);
+	const TypeIdentifier * args,
+	size_t template_n, const Template * , BumpAllocator * alloc);
 /*Mangles a Type without substitutions*/
 const char * mangleType(const TypeIdentifier * ti, char * buf);
 /*Creates a Non Function Pointer Type*/
 const TypeIdentifier createTypeId_(
 	const char * base, const char * const* nests,
-	const Template *,
+	size_t template_n, const Template *,
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
 /*Creates a Function Pointer Type*/
 const TypeIdentifier createFunctionPtrTypeId_(
 	const TypeIdentifier * returns, size_t arg_n,
 	const TypeIdentifier * args, const char *const * nests,
-	const Template *,
+	size_t template_n, const Template *, 
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
 /*Creates a special method (operator/constructor/destructor)*/
 const MethodIdentifierData createSpecialMethodIdentifierData(
 	SPECIAL_METHOD tag,
-	const char *const* nests,
+	const char *const* nests, size_t template_n,
 	const Template *,
 	const size_t argtype_n,const TypeIdentifier * args,
 	BumpAllocator * alloc);

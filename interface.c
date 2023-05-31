@@ -31,6 +31,7 @@ const char * mangle(
 			(const char **)nests,
 			argtype_n,
 			argtypes,
+			template_n,
 			NULL,
 			&allocator
 		);
@@ -38,6 +39,7 @@ const char * mangle(
 		d=createGlobalIdentifierData(
 			id,
 			(const char *const *)nests,
+			template_n,
 			NULL,
 			&allocator
 		);
@@ -102,16 +104,21 @@ const TypeIdentifier createTypeIdentifier(
 	...
 ){
 	BumpAllocator allocator ={0};
-	char ** nests=bump_alloc(&allocator, sizeof(char *)*(nests_n+1));
 	va_list args;
 	va_start(args, template_n);
+	char ** nests=bump_alloc(&allocator, sizeof(char *)*(nests_n+1));
 	for (size_t i=0; i<nests_n; i++)
 		nests[i]=va_arg(args, char *);
 	nests[nests_n]=NULL;
+
+	Template * templates=bump_alloc(&allocator, sizeof(Template)*(template_n));
+	for (size_t i=0; i<template_n; i++)
+		templates[i]=va_arg(args, Template);
 	TypeIdentifier result= createTypeId_(
 		base,
 		(const char *const *)nests,
-		NULL,
+		template_n,
+		templates,
 		ptrs,
 		flags,
 		&allocator
@@ -145,6 +152,7 @@ const TypeIdentifier createFunctionPtrTypeIdentifier(
 		arg_n,
 		argtypes,
 		(const char *const *)nests,
+		template_n,
 		NULL,
 		ptrs,
 		flags,
@@ -181,6 +189,7 @@ const char * mangleSpecialMethod(
 	d=createSpecialMethodIdentifierData(
 		tag,
 		(const char *const *)nests,
+		template_n,
 		NULL,
 		argtype_n,
 		argtypes,

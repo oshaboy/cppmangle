@@ -350,6 +350,7 @@ static void setNests(
 const TypeIdentifier createTypeId_(
 	const char * base,
 	const char * const * nests,
+	const size_t template_n,
 	const Template * templates,
 	const POINTER_QUALIFIER * ptrs,
 	const unsigned long flags,
@@ -410,6 +411,7 @@ const TypeIdentifier createFunctionPtrTypeId_(
 	const size_t arg_count,
 	const TypeIdentifier * args,
 	const char * const * nests,
+	const size_t template_n,
 	const Template * templates,
 	const POINTER_QUALIFIER * ptrs,
 	const unsigned long flags,
@@ -441,7 +443,13 @@ const TypeIdentifier createFunctionPtrTypeId_(
 	setLengths(&result);
 	return result;
 }
-const IdentifierData createGlobalIdentifierData(const char * id, const char * const * nests, const Template * templates, BumpAllocator * alloc){
+const IdentifierData createGlobalIdentifierData(
+	const char * id,
+	const char * const * nests,
+	const size_t template_n,
+	const Template * templates,
+	BumpAllocator * alloc
+){
 	
 	IdentifierData result ={
 		.ismethod=false,
@@ -458,6 +466,7 @@ const MethodIdentifierData createMethodIdentifierData(
 	const char ** nests,
 	const size_t argtype_n,
 	const TypeIdentifier * args,
+	const size_t template_n,
 	const Template * templates,
 	BumpAllocator * alloc
 ){
@@ -479,6 +488,7 @@ const MethodIdentifierData createMethodIdentifierData(
 }
 const MethodIdentifierData createSpecialMethodIdentifierData(
 	SPECIAL_METHOD tag, const char *const * nests,
+	const size_t template_n,
 	const Template * templates,
 	const size_t argtype_n, const TypeIdentifier * args,
 	BumpAllocator * alloc
