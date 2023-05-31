@@ -10,20 +10,20 @@
 
 
 START_TEST(nested_global){
-	const char * mangled_name=mangle("myglobal",1,NOT_METHOD, "Nester");
+	const char * mangled_name=mangle("myglobal",1,NOT_METHOD,0, "Nester");
 	ck_assert_str_eq(mangled_name, "_ZN6Nester8myglobalE");
 } END_TEST
 START_TEST(dont_mangle_unnested_global){
-	const char * mangled_name=mangle("myglobal",0,NOT_METHOD);
+	const char * mangled_name=mangle("myglobal",0,NOT_METHOD,0);
 	ck_assert_str_eq(mangled_name, "myglobal");
 } END_TEST
 START_TEST(void_function) {
-	const char * mangled_name=mangle("void_func",0,0);
+	const char * mangled_name=mangle("void_func",0,0,0);
 	ck_assert_str_eq(mangled_name, "_Z9void_funcv");
 } END_TEST
 
 START_TEST(int_int_function) {
-	const char * mangled_name=mangle("add", 0,2,
+	const char * mangled_name=mangle("add", 0,2,0,
 		int_identifier,
 		int_identifier
 	);
@@ -34,7 +34,7 @@ START_TEST(nest_function) {
 	const char * mangled_name=mangle(
 		"nested",
 		1,
-		0,
+		0,0,
 		"Nester"
 	);
 	ck_assert_str_eq(mangled_name, "_ZN6Nester6nestedEv");
@@ -44,12 +44,12 @@ START_TEST(nest_function) {
 START_TEST(named_argument_function) {
 	const char * mangled_name=mangle(
 		"named", 0,
-		1,
+		1,0,
 		createTypeIdentifier(
 			"MyName",
 			(POINTER_QUALIFIER[]){END},
 			IDENTIFIER_BITMASK,
-			0
+			0,0
 		)
 	);
 	ck_assert_str_eq(mangled_name, "_Z5named6MyName");
@@ -59,7 +59,7 @@ START_TEST(named_argument_function) {
 START_TEST(pointer_argument_function) {
 	const char * mangled_name=mangle(
 		"ptr", 0,
-		1,
+		1,0,
 		int_ptr_identifier
 	);
 	ck_assert_str_eq(mangled_name, "_Z3ptrPi");
@@ -70,7 +70,7 @@ START_TEST(pointer_argument_function) {
 START_TEST(fully_compressed_pointer_argument_function) {
 	const char * mangled_name=mangle(
 		"ptr", 0,
-		2,
+		2,0,
 		int_ptr_identifier,
 		int_ptr_identifier
 	);
@@ -81,24 +81,24 @@ START_TEST(fully_compressed_pointer_argument_function) {
 START_TEST(partially_compressed_pointer_argument_function) {
 	const char * mangled_name=mangle(
 		"ptr", 0,
-		3,
+		3,0,
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,0,END},
 			0,
-			0
+			0,0
 		)
 	);
 	ck_assert_str_eq(mangled_name, "_Z3ptrPiPS_PS0_");
@@ -107,21 +107,21 @@ START_TEST(partially_compressed_pointer_argument_function) {
 START_TEST(all_subs_in_first_argument) {
 	const char * mangled_name=mangle(
 		"all_in_first", 0,
-		3,
+		3,0,
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,0,END},
-			0,0
+			0,0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,END},
-			0,0
+			0,0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,END},
-			0,0
+			0,0,0
 		)
 
 	);
@@ -130,25 +130,25 @@ START_TEST(all_subs_in_first_argument) {
 
 START_TEST(compressed_pointer_argument_function_with_nest) {
 	const char * mangled_name=mangle(
-		"ptr", 1, 3,
+		"ptr", 1, 3,0,
 		"Nester",
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,0,0,END},
 			0,
-			0
+			0,0
 		)
 
 	);
@@ -159,18 +159,18 @@ START_TEST(complex_number_argument) {
 	const char * mangled_name=mangle(
 		"ccomplex",
 		0,
-		2,
+		2,0,
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){0,END},
 			COMPLEX_BITMASK,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){END},
 			COMPLEX_BITMASK,
-			0
+			0,0
 		)
 			
 	);
@@ -180,12 +180,12 @@ START_TEST(constant_pointer_argument) {
 	const char * mangled_name=mangle(
 		"cpointer",
 		0,
-		1,
+		1,0,
 		createTypeIdentifier(
 			"i",
-			(POINTER_QUALIFIER[]){CONSTANT,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER,END},
 			0,
-			0
+			0,0
 		)
 			
 
@@ -197,7 +197,7 @@ START_TEST(ellipsis_argument) {
 	const char * mangled_name=mangle(
 		"printf",
 		0,
-		2,
+		2,0,
 		char_ptr_identifier,
 		ellipsis_identifier
 	);
@@ -208,12 +208,12 @@ START_TEST(void_function_pointer_argument) {
 	const char * mangled_name=mangle(
 		"voidfunc",
 		0,
-		1,
+		1,0,
 		
 		createFunctionPtrTypeIdentifier(
 			NULL,
 			(POINTER_QUALIFIER[]){0,END}, 
-			0,0,0
+			0,0,0,0
 		)
 			
 
@@ -225,12 +225,12 @@ START_TEST(function_pointer_argument_no_subs) {
 	const char * mangled_name=mangle(
 		"fptr",
 		0,
-		1,
+		1,0,
 		
 			createFunctionPtrTypeIdentifier(
 				&int_identifier,
 				(POINTER_QUALIFIER[]){0,END}, 
-				0,0,2,
+				0,0,2,0,
 					int_identifier,
 					int_identifier
 			)
@@ -244,13 +244,13 @@ START_TEST(pointer_qualifier_order) {
 	const char * mangled_name=mangle(
 		"ptr_order",
 		0,
-		1,
+		1,0,
 	
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|RESTRICT_POINTER|VOLATILE_POINTER,0,END},
 			0,
-			0
+			0,0
 		)
 
 		
@@ -263,31 +263,31 @@ START_TEST(pointer_qualifier_substitution) {
 	const char * mangled_name=mangle(
 		"ptr_order_subs",
 		0,
-		4,
+		4,0,
 		
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|RESTRICT_POINTER|VOLATILE_POINTER,0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			int_string,
 			(POINTER_QUALIFIER[]){0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|VOLATILE_POINTER,0,END},
 			0,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|RESTRICT_POINTER|VOLATILE_POINTER,0,END},
 			0,
-			0
+			0,0
 		)
 
 	);
@@ -295,32 +295,32 @@ START_TEST(pointer_qualifier_substitution) {
 	mangled_name=mangle(
 		"ptr_mangle",
 		0,
-		5,
+		5,0,
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,0,END},
-			0,0
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|RESTRICT_POINTER|VOLATILE_POINTER,0,END},
+			0,0,0
 		),
 		createTypeIdentifier(
 			int_string,
 			(POINTER_QUALIFIER[]){0,0,END},
-			0,0
+			0,0,0
 		),
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){RESTRICT,0,END},
-			0,0
+			(POINTER_QUALIFIER[]){RESTRICT_POINTER,0,END},
+			0,0,0
 		),
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|VOLATILE,0,END},
-			0,0
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|VOLATILE_POINTER,0,END},
+			0,0,0
 		),
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT,0,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER,0,END},
 			0,
-			0
+			0,0
 		)
 	);
 	ck_assert_str_eq(mangled_name, "_Z10ptr_manglePrVPKiPPiPrS3_PVS0_PS0_");
@@ -330,13 +330,13 @@ START_TEST(ignore_restrict_and_volatile_on_last) {
 	const char * mangled_name=mangle(
 		"funcsub",
 		0,
-		1,
+		1,0,
 		
 		createTypeIdentifier(
 			int_string,
-			(POINTER_QUALIFIER[]){CONSTANT|RESTRICT|VOLATILE,RESTRICT|VOLATILE,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER|RESTRICT_POINTER|VOLATILE_POINTER,RESTRICT_POINTER|VOLATILE_POINTER,END},
 			0,
-			0
+			0,0
 		)
 
 		
@@ -348,12 +348,12 @@ START_TEST(substitution_in_function_pointer) {
 	const char * mangled_name=mangle(
 		"funcsub",
 		0,
-		2,
+		2,0,
 		
 		createFunctionPtrTypeIdentifier(
 			&int_identifier,
 			(POINTER_QUALIFIER[]){0,END}, 
-			0,0,2,
+			0,0,2,0,
 				int_ptr_identifier,
 				int_ptr_identifier
 		),
@@ -368,14 +368,14 @@ START_TEST(substitution_into_function_pointer) {
 	const char * mangled_name=mangle(
 		"funcsub",
 		0,
-		2,
+		2,0,
 		
 
 		int_ptr_identifier,
 		createFunctionPtrTypeIdentifier(
 			&int_identifier,
 			(POINTER_QUALIFIER[]){0,END}, 
-			0,0,2,
+			0,0,2,0,
 				int_ptr_identifier,
 				int_ptr_identifier
 		)
@@ -388,18 +388,18 @@ START_TEST(substitution_of_function_pointer) {
 	const char * mangled_name=mangle(
 		"funcsub",
 		0,
-		2,
+		2,0,
 		createFunctionPtrTypeIdentifier(
 			&int_identifier,
 			(POINTER_QUALIFIER[]){0,END}, 
-			0,0,2,
+			0,0,2,0,
 				int_ptr_identifier,
 				int_ptr_identifier
 		),
 		createFunctionPtrTypeIdentifier(
 			&int_identifier,
 			(POINTER_QUALIFIER[]){0,END},
-			0,0,2,
+			0,0,2,0,
 				int_ptr_identifier,
 				int_ptr_identifier
 		)
@@ -413,7 +413,7 @@ START_TEST(special_method_test) {
 	const char * mangled_name;
 	mangled_name=mangleSpecialMethod(
 		COMPLETE_CONSTRUCTOR,
-		1,2,
+		1,2,0,
 		"MyClass",
 		int_identifier,
 		int_identifier
@@ -426,12 +426,12 @@ START_TEST(substitution_in_return_type) {
 	const char * mangled_name=mangle(
 		"funcsub",
 		0,
-		1,
+		1,0,
 		
 		createFunctionPtrTypeIdentifier(
 			&int_ptr_identifier,
 			(POINTER_QUALIFIER[]){0,END}, 
-			0,0,2,
+			0,0,2,0,
 				int_ptr_identifier,
 				int_ptr_identifier
 		)
@@ -442,7 +442,7 @@ START_TEST(substitution_in_return_type) {
 
 
 START_TEST(std_edge_case) {
-	const char * mangled_name=mangle("cout", 1,NOT_METHOD, "std");
+	const char * mangled_name=mangle("cout", 1,NOT_METHOD,0, "std");
 	ck_assert_str_eq(mangled_name, "_ZSt4cout");
 } END_TEST
 
@@ -494,18 +494,18 @@ START_TEST(const_lvalue_ref_test) {
 	const char * mangled_name=mangle(
 		"const_a",
 		0,
-		2,
+		2,0,
 		createTypeIdentifier(
 			"i",
 			(POINTER_QUALIFIER[]){END},
 			CONSTANT_REF_BITMASK|LVALUE_REF_BITMASK,
-			0
+			0,0
 		),
 		createTypeIdentifier(
 			"i",
-			(POINTER_QUALIFIER[]){CONSTANT,END},
+			(POINTER_QUALIFIER[]){CONSTANT_POINTER,END},
 			0,
-			0
+			0,0
 		)
 
 

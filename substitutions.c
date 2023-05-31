@@ -106,11 +106,11 @@ static TypeIdentifierDiff subtract(
 		but only if the qualifiers are in a specific order
 		*/
 		if (
-			((*pointer_ptr1&CONSTANT) && !(*pointer_ptr2&CONSTANT)) ||		/*PKi-Pi=invalid*/
-			(!(*pointer_ptr1&CONSTANT) && (*pointer_ptr2&CONSTANT)) || 		/*Pi-(P)Ki=invalid*/
+			((*pointer_ptr1&CONSTANT_POINTER) && !(*pointer_ptr2&CONSTANT_POINTER)) ||		/*PKi-Pi=invalid*/
+			(!(*pointer_ptr1&CONSTANT_POINTER) && (*pointer_ptr2&CONSTANT_POINTER)) || 		/*Pi-(P)Ki=invalid*/
 			((*pointer_ptr1 & NO_P)   && !(*pointer_ptr2 & NO_P)) ||		/*Ki-PKi=invalid*/
-			(!(*pointer_ptr1 & VOLATILE) && (*pointer_ptr2 & VOLATILE)) ||	/*Pi-VPi=invalid*/
-			(!(*pointer_ptr1 & RESTRICT) && (*pointer_ptr2 & RESTRICT))		/*Pi-rPi=invalid*/
+			(!(*pointer_ptr1 & VOLATILE_POINTER) && (*pointer_ptr2 & VOLATILE_POINTER)) ||	/*Pi-VPi=invalid*/
+			(!(*pointer_ptr1 & RESTRICT_POINTER) && (*pointer_ptr2 & RESTRICT_POINTER))		/*Pi-rPi=invalid*/
 
 		) return invalid;
 	}
@@ -676,8 +676,8 @@ static void setArgSubstitutionsRec(
 		POINTER_QUALIFIER qualifier_save = *pointer_ptr;
 		ticpy.member_pointers_end=pointer_ptr+1;
 		/*The substitutions for pointer qualifiers must go in with a specific order*/
-		if (qualifier_save & CONSTANT){
-			*pointer_ptr=NO_P | CONSTANT;
+		if (qualifier_save & CONSTANT_POINTER){
+			*pointer_ptr=NO_P | CONSTANT_POINTER;
 			updatePtr(
 				substitution_ds,
 				argnum,
@@ -689,8 +689,8 @@ static void setArgSubstitutionsRec(
 				COPY_PTR_QUALIFIERS
 			);
 		}
-		if (qualifier_save & RESTRICT){
-			*pointer_ptr=qualifier_save&CONSTANT;
+		if (qualifier_save & RESTRICT_POINTER){
+			*pointer_ptr=qualifier_save&CONSTANT_POINTER;
 			updatePtr(
 					substitution_ds,
 					argnum,
@@ -702,7 +702,7 @@ static void setArgSubstitutionsRec(
 					COPY_PTR_QUALIFIERS
 				);
 		}
-		if ((qualifier_save & RESTRICT) || !(qualifier_save & VOLATILE)){
+		if ((qualifier_save & RESTRICT_POINTER) || !(qualifier_save & VOLATILE_POINTER)){
 			/*Volatile doesn't get a substitution for some reason*/
 			*pointer_ptr=qualifier_save;
 			updatePtr(
@@ -719,7 +719,7 @@ static void setArgSubstitutionsRec(
 	}
 	
 	if (ti->member_ref & CONSTANT_REF){
-		*pointer_ptr=NO_P|CONSTANT;
+		*pointer_ptr=NO_P|CONSTANT_POINTER;
 		ticpy.member_pointers_end=pointer_ptr+1;
 		updatePtr(
 			substitution_ds,

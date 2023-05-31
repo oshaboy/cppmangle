@@ -166,16 +166,16 @@ TypeIdentifier demangle_type(
 		result.member_can_have_substitution=true;
 		switch (**mangled_name_ptr){
 			case 'r':
-				*pointer_qualifiers|=RESTRICT;
+				*pointer_qualifiers|=RESTRICT_POINTER;
 				break;
 			case 'V':
-				*pointer_qualifiers|=VOLATILE;
+				*pointer_qualifiers|=VOLATILE_POINTER;
 				break;
 			case 'P':
 				pointer_qualifiers++;
 				break;
 			case 'K':
-				*pointer_qualifiers|=CONSTANT;
+				*pointer_qualifiers|=CONSTANT_POINTER;
 				break;
 			case 'O':
 				result.member_ref=RVALUEREF;

@@ -204,10 +204,10 @@ char * mangleAuxData(const AuxilliaryTypeData * aux, char * buf){
 		const POINTER_QUALIFIER * pointer_ptr= aux->member_pointers;
 		pointer_ptr<aux->member_pointers_end; pointer_ptr++
 	){
-		if (*pointer_ptr&CONSTANT) *(Ps_ptr--)='K';
+		if (*pointer_ptr&CONSTANT_POINTER) *(Ps_ptr--)='K';
 		if (!(*pointer_ptr&NO_P))  *(Ps_ptr--)='P';
-		if (*pointer_ptr&VOLATILE) *(Ps_ptr--)='V';
-		if (*pointer_ptr&RESTRICT) *(Ps_ptr--)='r';
+		if (*pointer_ptr&VOLATILE_POINTER) *(Ps_ptr--)='V';
+		if (*pointer_ptr&RESTRICT_POINTER) *(Ps_ptr--)='r';
 	}
 	sprintf(buf, "%s%s%s",refchars[aux->member_ref], Ps_ptr+1, complexchars[aux->member_complexity]);
 	return buf;
@@ -350,6 +350,7 @@ static void setNests(
 const TypeIdentifier createTypeId_(
 	const char * base,
 	const char * const * nests,
+	const Template * templates,
 	const POINTER_QUALIFIER * ptrs,
 	const unsigned long flags,
 	BumpAllocator * alloc
@@ -362,7 +363,7 @@ const TypeIdentifier createTypeId_(
 	const size_t ptr_count=end-ptrs;
 	POINTER_QUALIFIER * new_ptr_qualifiers=bump_alloc(alloc, sizeof(POINTER_QUALIFIER)*(ptr_count+1));
 	memcpy(new_ptr_qualifiers,ptrs,ptr_count);
-	new_ptr_qualifiers[((__ssize_t)ptr_count)-1]&=~(VOLATILE|RESTRICT);
+	new_ptr_qualifiers[((__ssize_t)ptr_count)-1]&=~(VOLATILE_POINTER|RESTRICT_POINTER);
 	TypeIdentifier result ={
 		.methodnt.name=base_cpy,
 		.member_ref=flags&0b1111,
@@ -409,6 +410,7 @@ const TypeIdentifier createFunctionPtrTypeId_(
 	const size_t arg_count,
 	const TypeIdentifier * args,
 	const char * const * nests,
+	const Template * templates,
 	const POINTER_QUALIFIER * ptrs,
 	const unsigned long flags,
 	BumpAllocator * alloc
@@ -439,7 +441,7 @@ const TypeIdentifier createFunctionPtrTypeId_(
 	setLengths(&result);
 	return result;
 }
-const IdentifierData createGlobalIdentifierData(const char * id, const char * const * nests, BumpAllocator * alloc){
+const IdentifierData createGlobalIdentifierData(const char * id, const char * const * nests, const Template * templates, BumpAllocator * alloc){
 	
 	IdentifierData result ={
 		.ismethod=false,
@@ -456,6 +458,7 @@ const MethodIdentifierData createMethodIdentifierData(
 	const char ** nests,
 	const size_t argtype_n,
 	const TypeIdentifier * args,
+	const Template * templates,
 	BumpAllocator * alloc
 ){
 	
@@ -474,7 +477,13 @@ const MethodIdentifierData createMethodIdentifierData(
 	}
 	return result;
 }
-const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag, const char *const * nests, const size_t argtype_n, const TypeIdentifier * args,BumpAllocator * alloc){
+const MethodIdentifierData createSpecialMethodIdentifierData(
+	SPECIAL_METHOD tag, const char *const * nests,
+	const Template * templates,
+	const size_t argtype_n, const TypeIdentifier * args,
+	BumpAllocator * alloc
+	
+){
 	MethodIdentifierData result ={
 		.ismethod=true,
 		.is_special_method=true,

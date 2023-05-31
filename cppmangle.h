@@ -1,5 +1,6 @@
 #ifndef CPP_MANGLE_H
 #define CPP_MANGLE_H
+#include <sys/types.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,9 +34,9 @@ typedef enum {
 
 /*Every pointer can have any of 3 qualifiers*/
 typedef enum  __attribute__ ((packed)) {
-	CONSTANT=1,
-	VOLATILE=2,
-	RESTRICT=4,
+	CONSTANT_POINTER=1,
+	VOLATILE_POINTER=2,
+	RESTRICT_POINTER=4,
 	NO_P=0x80, //For Internal use
 	END=0xff
 } POINTER_QUALIFIER;
@@ -107,7 +108,7 @@ const extern LenId special_method_identifiers[];
 
 typedef struct Substitution Substitution;
 typedef struct TypeIdentifier TypeIdentifier;
-
+typedef struct Template Template;
 /*All the extra data a type can have. also used in TypeIdentifierDiff*/
 struct AuxilliaryTypeData_{
 	/*all pointer qualifiers, pointer_end is a single cell after the last qualifier*/
@@ -149,11 +150,14 @@ typedef union {
 	struct MethodData_ md;
 	struct {struct MethodData_ md;} method_data;
 } MethodData;
+
 /*
 Identifies a Type
 */
 struct TypeIdentifier {
 	AuxilliaryTypeData auxdata;
+	size_t template_count;
+	const Template * templates;
 	union {
 		struct {
 			/*
@@ -186,6 +190,7 @@ typedef struct ArgSubstitutionTree{
 	struct ArgSubstitutionTree * subs_of_func_ptr;
 } ArgSubstitutionTree;
 
+
 typedef struct {
 	size_t nest_sub_num;
 	Substitution * nest_subtitutions;
@@ -194,8 +199,20 @@ typedef struct {
 	size_t max_nests;
 } SubstitutionDataStructure;
 
+
+struct Template
+{
+	CBool has_value;
+	__intmax_t value;
+	TypeIdentifier ti;
+};
+
 /*Data of an identifier to mangle*/
 typedef struct {
+	CBool ismethod;
+	CBool is_special_method;
+	size_t template_count;
+	const Template * templates;
 	union {
 		struct IdentifierData_ d;
 		struct {
@@ -206,8 +223,6 @@ typedef struct {
 		SubstitutionDataStructure substitution_ds;
 		MethodData method_data;
 	} method;
-	CBool ismethod;
-	CBool is_special_method;
  
 } IdentifierData;
 
@@ -237,28 +252,51 @@ of which one it is.
 /* mangles an IdentifierData structure */
 const char * mangleIdentifierData(const IdentifierData * d, BumpAllocator * alloc);
 
-
+const inline static Template toTemplate(TypeIdentifier ti){
+	return (Template){
+		.has_value=0,
+		.ti=ti
+	};
+}
+const inline static Template createConstTemplate(TypeIdentifier ti,__intmax_t value){
+	return (Template){
+		.has_value=1,
+		.value=value,
+		.ti=ti
+	};
+}
 /*create IdentifierData structure for a global variable*/
-const IdentifierData createGlobalIdentifierData(const char * id, const char *const* nests, BumpAllocator * alloc);
+const IdentifierData createGlobalIdentifierData(
+	const char * id,
+	const char *const* nests,
+	const Template *,
+	BumpAllocator * alloc);
 /*creates IdentifierData structure for methodData*/
 const MethodIdentifierData createMethodIdentifierData(
 	const char * id, const char ** nests, size_t argtype_n,
-	const TypeIdentifier * args, BumpAllocator * alloc);
+	const TypeIdentifier * args, const Template * , BumpAllocator * alloc);
 /*Mangles a Type without substitutions*/
 const char * mangleType(const TypeIdentifier * ti, char * buf);
 /*Creates a Non Function Pointer Type*/
 const TypeIdentifier createTypeId_(
 	const char * base, const char * const* nests,
+	const Template *,
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
 /*Creates a Function Pointer Type*/
 const TypeIdentifier createFunctionPtrTypeId_(
 	const TypeIdentifier * returns, size_t arg_n,
 	const TypeIdentifier * args, const char *const * nests,
+	const Template *,
 	const POINTER_QUALIFIER * ptrs, unsigned long flags,
 	BumpAllocator * alloc);
 /*Creates a special method (operator/constructor/destructor)*/
-const MethodIdentifierData createSpecialMethodIdentifierData(SPECIAL_METHOD tag, const char *const* nests, const size_t argtype_n, const TypeIdentifier * args,BumpAllocator * alloc);
+const MethodIdentifierData createSpecialMethodIdentifierData(
+	SPECIAL_METHOD tag,
+	const char *const* nests,
+	const Template *,
+	const size_t argtype_n,const TypeIdentifier * args,
+	BumpAllocator * alloc);
 const MethodIdentifierData demangle(const char * mangled_name, BumpAllocator * alloc);
 /*Bitmasks for flags*/
 #define LVALUE_REF_BITMASK 1
@@ -284,24 +322,26 @@ const char * mangle(
 	const char * id,
 	size_t nests_n,
 	size_t argtype_n,
+	size_t template_n,
 	...
 );
 const TypeIdentifier createTypeIdentifier(
 	const char * base,
 	const POINTER_QUALIFIER * ptrs,
 	unsigned long flags,
-	size_t nests_n,
+	size_t nests_n, size_t template_n,
 	...);
 const TypeIdentifier createFunctionPtrTypeIdentifier(
 	const TypeIdentifier * returns,
 	const POINTER_QUALIFIER * ptrs,
 	unsigned long flags,
-	size_t nests_n, size_t arg_n,
+	size_t nests_n, size_t arg_n, size_t template_n,
 	...);
 const char * mangleSpecialMethod(
 	SPECIAL_METHOD tag,
 	size_t nests_n,
 	const size_t argtype_n,
+	size_t template_n,
 	...
 );
 #define NOT_METHOD ((size_t)-1)

@@ -4,7 +4,7 @@
 
 static const POINTER_QUALIFIER qualifierless_pointers[4]={0,0,0,END};
 #define qualifierless_pointers_end (qualifierless_pointers+3)
-static const POINTER_QUALIFIER const_qualified_pointers[4]={0,0,CONSTANT,END};
+static const POINTER_QUALIFIER const_qualified_pointers[4]={0,0,CONSTANT_POINTER,END};
 #define const_qualified_pointers_end (const_qualified_pointers+3)
 
 #define SIZEOF(STR) (sizeof(STR)-1)/sizeof((STR)[0])
@@ -208,3 +208,5 @@ TYPE_IDENTIFIER(std_iostream, "Sd")
 TYPE_IDENTIFIER(std_string, "Ss")
 TYPE_IDENTIFIER(std_istream, "Si")
 TYPE_IDENTIFIER(std_ostream, "So")
+
+std_allocator default_allocator;

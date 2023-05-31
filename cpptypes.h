@@ -66,4 +66,10 @@ OPAQUE_TYPE_DECL(std_istream_32, 144)
 OPAQUE_TYPE_DECL(std_ostream_32, 140)
 OPAQUE_TYPE_DECL(std_iostream_32, 148)
 OPAQUE_TYPE_DECL(std_vector_32, 12)
+OPAQUE_TYPE_DECL(std_allocator, 1)
+extern std_allocator default_allocator;
+#if 0
+std_string_64 _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_(const char *, const std_allocator REF);
+#define CtoCPPString _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_
+#endif 
 #endif

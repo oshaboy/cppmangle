@@ -8,6 +8,7 @@ const char * mangle(
 	const char * id,
 	size_t nests_n,
 	size_t argtype_n,
+	size_t template_n,
 	...
 ){
 	BumpAllocator allocator ={0};
@@ -15,7 +16,7 @@ const char * mangle(
 
 	TypeIdentifier * argtypes;
 	va_list args;
-	va_start(args, argtype_n);
+	va_start(args, template_n);
 	for (size_t i=0; i<nests_n; i++)
 		nests[i]=va_arg(args, char *);
 	nests[nests_n]=NULL;
@@ -30,12 +31,14 @@ const char * mangle(
 			(const char **)nests,
 			argtype_n,
 			argtypes,
+			NULL,
 			&allocator
 		);
 	} else {
 		d=createGlobalIdentifierData(
 			id,
 			(const char *const *)nests,
+			NULL,
 			&allocator
 		);
 	}
@@ -95,19 +98,20 @@ const TypeIdentifier createTypeIdentifier(
 	const char * base,
 	const POINTER_QUALIFIER * ptrs,
 	unsigned long flags,
-	size_t nests_n,
+	size_t nests_n,  size_t template_n,
 	...
 ){
 	BumpAllocator allocator ={0};
 	char ** nests=bump_alloc(&allocator, sizeof(char *)*(nests_n+1));
 	va_list args;
-	va_start(args, nests_n);
+	va_start(args, template_n);
 	for (size_t i=0; i<nests_n; i++)
 		nests[i]=va_arg(args, char *);
 	nests[nests_n]=NULL;
 	TypeIdentifier result= createTypeId_(
 		base,
 		(const char *const *)nests,
+		NULL,
 		ptrs,
 		flags,
 		&allocator
@@ -122,13 +126,13 @@ const TypeIdentifier createFunctionPtrTypeIdentifier(
 	const TypeIdentifier * returns,
 	const POINTER_QUALIFIER * ptrs,
 	unsigned long flags,
-	size_t nests_n, size_t arg_n,
+	size_t nests_n, size_t arg_n,  size_t template_n,
 	...
 ){
 	BumpAllocator allocator ={0};
 	char ** nests=bump_alloc(&allocator, sizeof(char *)*(nests_n+1));
 	va_list args;
-	va_start(args, arg_n);
+	va_start(args, template_n);
 	for (size_t i=0; i<nests_n; i++)
 		nests[i]=va_arg(args, char *);
 	nests[nests_n]=NULL;
@@ -141,6 +145,7 @@ const TypeIdentifier createFunctionPtrTypeIdentifier(
 		arg_n,
 		argtypes,
 		(const char *const *)nests,
+		NULL,
 		ptrs,
 		flags,
 		&allocator
@@ -152,8 +157,9 @@ const TypeIdentifier createFunctionPtrTypeIdentifier(
 
 const char * mangleSpecialMethod(
 	SPECIAL_METHOD tag,
-	size_t nests_n,
+	const size_t nests_n,
 	const size_t argtype_n,
+	const size_t template_n,
 	...
 ){
 	assert(argtype_n!=NOT_METHOD);
@@ -163,7 +169,7 @@ const char * mangleSpecialMethod(
 
 	TypeIdentifier * argtypes;
 	va_list args;
-	va_start(args, argtype_n);
+	va_start(args, template_n);
 	for (size_t i=0; i<nests_n; i++)
 		nests[i]=va_arg(args, char *);
 	nests[nests_n]=NULL;
@@ -175,6 +181,7 @@ const char * mangleSpecialMethod(
 	d=createSpecialMethodIdentifierData(
 		tag,
 		(const char *const *)nests,
+		NULL,
 		argtype_n,
 		argtypes,
 		&allocator
